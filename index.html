@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>로켓 마을 작전본부</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: 작전 지령실 — 상단 지휘 바, 탭으로 나뉜 세 개의 지령 보드, 지령서 카드에 도장으로 상태 표시 */
+:root{
+  --bg:#0e0b0c; --panel:#171214; --panel-2:#1f181b; --line:#2e2327;
+  --fg:#f1e9e6; --muted:#9e8f8c; --red:#cf2236; --red-hi:#ff4f5f;
+  --gold:#e3b54c; --ok:#4cb67b; --warn:#e2a03a;
+  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  background-image:repeating-linear-gradient(135deg,transparent 0 22px,rgba(207,34,54,.035) 22px 23px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--red-hi);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#140e10,var(--bg))}
+.top{display:flex;align-items:center;gap:14px;padding-block:18px 14px;flex-wrap:wrap}
+.emblem{width:46px;height:46px;flex:none}
+.brand{min-width:0;flex:1}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4.6vw,34px);line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.login{display:flex;align-items:center;gap:8px;background:#5865f2;border:0;color:#fff;border-radius:6px;padding:9px 14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.login:hover{filter:brightness(1.1)}
+.login.me{background:var(--panel-2);border:1px solid var(--line);color:var(--fg)}
+.login svg{width:18px;height:18px}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tab{background:none;border:0;padding:10px 16px 12px;color:var(--muted);font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--red)}
+.tab .n{font-family:var(--f-mono);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 6px;color:var(--muted)}
+
+.demo{font-size:12.5px;color:var(--warn);background:rgba(226,160,58,.08);border:1px dashed rgba(226,160,58,.4);border-radius:4px;padding:7px 12px;margin-block:18px 0}
+
+main{padding-block:20px 60px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.bar h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0 auto 0 0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted);cursor:pointer}
+.chip[aria-pressed="true"]{color:var(--fg);border-color:var(--red);background:rgba(207,34,54,.14)}
+.btn{background:var(--red);color:#fff;border:0;border-radius:5px;padding:9px 16px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#e02a3f}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
+.btn.ghost:hover{border-color:var(--muted)}
+.btn:disabled{background:var(--panel-2);color:var(--muted);cursor:not-allowed}
+
+/* request cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;position:relative;display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
+.code{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);letter-spacing:.06em}
+.card h3{margin:0;font-size:19px;font-weight:600;line-height:1.3;padding-right:86px}
+.stamp{position:absolute;top:14px;right:12px;font-family:var(--f-display);font-size:14px;padding:3px 8px;border:2px solid currentColor;border-radius:3px;transform:rotate(6deg);letter-spacing:.04em}
+.s-open{color:var(--red-hi)} .s-doing{color:var(--warn)} .s-done{color:var(--ok)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:2px 8px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line)}
+.tag.shiny{color:var(--gold);border-color:rgba(227,181,76,.45)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13.5px}
+dt{color:var(--muted)} dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.reward{font-family:var(--f-mono);color:var(--gold);font-weight:700}
+.note{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px;margin:0}
+.foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);flex-wrap:wrap}
+.who{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-right:auto;min-width:0}
+.av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:none}
+.foot .btn{padding:7px 14px;font-size:13.5px}
+
+/* events */
+.events{display:grid;gap:14px}
+.ev{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:start}
+.date{text-align:center;border:1px solid var(--line);border-radius:5px;padding:8px 4px;background:var(--panel-2)}
+.date .m{font-family:var(--f-mono);font-size:11px;color:var(--red-hi);letter-spacing:.1em}
+.date .d{font-family:var(--f-display);font-size:34px;line-height:1.1}
+.date .w{font-size:12px;color:var(--muted)}
+.ev h3{margin:0 0 4px;font-size:19px;font-weight:600}
+.ev .meta{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.meter{height:8px;background:var(--panel-2);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--red)}
+.meter.full i{background:var(--muted)}
+.cap{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin:10px 0 6px;font-variant-numeric:tabular-nums}
+.names{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.names span{font-size:12px;padding:2px 8px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line)}
+.names span.mine{border-color:var(--red);color:var(--red-hi)}
+.lots{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}
+.lots li::before{content:"LOT ";font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.ev-act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:120px}
+
+/* form */
+.sheet{position:fixed;inset:0;background:rgba(5,3,4,.72);display:grid;place-items:center;z-index:20;padding:16px}
+.form{background:var(--panel);border:1px solid var(--line);border-radius:8px;width:min(520px,100%);max-height:90vh;overflow:auto;padding:22px;display:grid;gap:14px}
+.form h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0}
+.field{display:grid;gap:6px}
+.field label,.field .lab{font-size:13px;color:var(--muted);font-weight:500}
+.field input,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 11px;width:100%}
+.field textarea{resize:vertical;min-height:70px}
+.checks{display:flex;flex-wrap:wrap;gap:6px}
+.checks label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+.checks input{accent-color:var(--red)}
+.row{display:flex;gap:8px;justify-content:flex-end}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:6px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+.empty{color:var(--muted);text-align:center;padding:40px 0;border:1px dashed var(--line);border-radius:6px}
+
+@media (max-width:640px){
+  .ev{grid-template-columns:64px 1fr;gap:12px}
+  .date .d{font-size:26px}
+  .ev-act{grid-column:1/-1;flex-direction:row}
+  .ev-act .btn{flex:1}
+}
+@media (prefers-reduced-motion:no-preference){
+  .card,.ev{transition:border-color .15s}
+  .card:hover,.ev:hover{border-color:#4a363c}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="top">
+      <svg class="emblem" viewBox="0 0 48 48" aria-hidden="true">
+        <polygon points="24,2 44,13 44,35 24,46 4,35 4,13" fill="#cf2236"/>
+        <polygon points="24,8 39,16.5 39,31.5 24,40 9,31.5 9,16.5" fill="#0e0b0c"/>
+        <path d="M24 13c4 3 6 7.5 6 13l-2.5 4h-7L18 26c0-5.5 2-10 6-13z" fill="#f1e9e6"/>
+        <circle cx="24" cy="22" r="2.4" fill="#cf2236"/>
+        <path d="M21 31h6l-3 5z" fill="#e3b54c"/>
+      </svg>
+      <div class="brand">
+        <h1>로켓 마을 작전본부</h1>
+        <p>코블몬 서버 · 포켓몬 의뢰 · PVP 대회 · 경매 모집</p>
+      </div>
+      <button class="login" id="loginBtn" type="button"></button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="req" aria-selected="true">포켓몬 의뢰 <span class="n" id="nReq"></span></button>
+      <button class="tab" role="tab" data-tab="pvp" aria-selected="false">PVP 대회 <span class="n" id="nPvp"></span></button>
+      <button class="tab" role="tab" data-tab="auc" aria-selected="false">경매 모집 <span class="n" id="nAuc"></span></button>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="demo">미리보기 버전이에요. 아래 글은 모두 예시이고, 새로고침하면 처음 상태로 돌아가요. DB 연결은 다음 단계에서 붙여요.</div>
+</div>
+
+<main class="wrap" id="main"></main>
+
+<div class="sheet" id="sheet" hidden>
+  <form class="form" id="reqForm">
+    <h2>새 의뢰 작성</h2>
+    <div class="field"><label for="fPoke">원하는 포켓몬</label><input id="fPoke" required placeholder="예: 루카리오"></div>
+    <div class="field"><span class="lab">조건</span>
+      <div class="checks">
+        <label><input type="checkbox" id="cShiny" value="이로치">이로치</label>
+        <label><input type="checkbox" id="c6v" value="6V">6V</label>
+        <label><input type="checkbox" id="c5v" value="5V 이상">5V 이상</label>
+        <label><input type="checkbox" id="cHa" value="숨겨진 특성">숨겨진 특성</label>
+      </div>
+    </div>
+    <div class="field"><label for="fNature">성격 (선택)</label><input id="fNature" placeholder="예: 겁쟁이"></div>
+    <div class="field"><label for="fReward">보상</label><input id="fReward" required placeholder="예: 8,000 포켓달러"></div>
+    <div class="field"><label for="fNote">메모 (선택)</label><textarea id="fNote" placeholder="볼 종류, 거래 가능 시간 등"></textarea></div>
+    <div class="row"><button type="button" class="btn ghost" id="cancelForm">취소</button><button class="btn" type="submit">의뢰 올리기</button></div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const COLORS=['#cf2236','#7a4bd1','#2a8f6a','#c27a1d','#2f6fb8','#a8326e','#5b6b2a'];
+const color=n=>COLORS[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let me=null;
+let tab='req', filter='all';
+let nextId=148;
+
+const reqs=[
+ {id:147,poke:'루카리오',tags:['이로치','5V 이상','숨겨진 특성'],nature:'겁쟁이',reward:'12,000 포켓달러',by:'shadow_hjk',ago:'12분 전',status:'open',note:'럭셔리볼이면 보상 2천 추가할게요.'},
+ {id:146,poke:'한카리아스',tags:['6V'],nature:'명랑',reward:'다이맥스캔디 3개',by:'검은망토',ago:'38분 전',status:'open',note:''},
+ {id:145,poke:'갸라도스',tags:['이로치'],nature:'',reward:'5,000 포켓달러',by:'rkt_minsu',ago:'1시간 전',status:'doing',taker:'밤까마귀',note:'대회 전까지 필요해요.'},
+ {id:144,poke:'팬텀',tags:['5V 이상'],nature:'겁쟁이',reward:'특성캡슐 1개',by:'dawn_seo',ago:'3시간 전',status:'open',note:''},
+ {id:143,poke:'메타몽',tags:['6V'],nature:'',reward:'20,000 포켓달러',by:'카이로',ago:'어제',status:'done',taker:'shadow_hjk',note:'외국산 6V 메타몽 찾습니다.'},
+ {id:142,poke:'브리두라스',tags:['숨겨진 특성'],nature:'고집',reward:'금왕관 1개',by:'밤까마귀',ago:'어제',status:'open',note:'알 상태도 괜찮아요.'}
+];
+const pvps=[
+ {id:1,title:'10월 정기 랭크전',m:'OCT',d:25,w:'토 20:00',meta:'싱글 · 6마리 중 3마리 · Lv.50 고정',prize:'우승 마스터볼 1개, 준우승 금왕관 2개',cap:16,who:['shadow_hjk','검은망토','rkt_minsu','밤까마귀','dawn_seo','카이로','redcoat_77','민트초코','nightowl','하늘다람','zeroK','곰발바닥']},
+ {id:2,title:'더블배틀 친선전',m:'NOV',d:1,w:'토 21:00',meta:'더블 · 4마리 · 레벨 제한 없음',prize:'참가자 전원 이상한사탕 5개',cap:8,who:['카이로','zeroK','곰발바닥','민트초코','nightowl','dawn_seo','검은망토','redcoat_77']}
+];
+const aucs=[
+ {id:1,title:'정기 경매 #7',m:'OCT',d:20,w:'화 21:00',meta:'장소: 로켓 마을 지하 경매장 · 진행 스파이스',lots:['이로치 루카리오 6V','특성패치 3개 묶음','금왕관 2개'],cap:10,who:['shadow_hjk','rkt_minsu','하늘다람','zeroK','곰발바닥','redcoat_77']},
+ {id:2,title:'전설 포켓몬 특별 경매',m:'NOV',d:8,w:'토 20:30',meta:'참가비 10,000 포켓달러 · 입장 시 납부',lots:['레쿠쟈 5V','이로치 뮤 (교환 불가 표시 없음)'],cap:12,who:['카이로','밤까마귀','dawn_seo']}
+];
+
+const STATUS={open:['모집중','s-open'],doing:['진행중','s-doing'],done:['완료','s-done']};
+
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,2200)}
+function needLogin(){if(!me){toast('먼저 디스코드로 로그인해 주세요');return true}return false}
+function av(n){return `<span class="av" style="background:${color(n)}">${esc([...n][0].toUpperCase())}</span>`}
+
+function renderLogin(){
+  const b=document.getElementById('loginBtn');
+  if(me){b.className='login me';b.innerHTML=`${av(me)}<span>${esc(me)}</span>`;b.title='로그아웃'}
+  else{b.className='login';b.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 11.8 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.9-9.8-3.4-13.7ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Z"/></svg>디스코드로 로그인`;b.title=''}
+}
+
+function renderCounts(){
+  document.getElementById('nReq').textContent=reqs.filter(r=>r.status==='open').length;
+  document.getElementById('nPvp').textContent=pvps.length;
+  document.getElementById('nAuc').textContent=aucs.length;
+}
+
+function reqCard(r){
+  const [label,cls]=STATUS[r.status];
+  const tags=[...r.tags.map(t=>`<span class="tag${t==='이로치'?' shiny':''}">${t==='이로치'?'✦ ':''}${esc(t)}</span>`),r.nature?`<span class="tag">성격: ${esc(r.nature)}</span>`:''].join('');
+  let act='';
+  if(r.status==='open'){act=r.by===me?`<button class="btn ghost" data-act="del" data-id="${r.id}">내리기</button>`:`<button class="btn" data-act="take" data-id="${r.id}">수락하기</button>`}
+  else if(r.status==='doing'){act=(r.by===me)?`<button class="btn" data-act="done" data-id="${r.id}">완료 처리</button>`:(r.taker===me?`<button class="btn ghost" data-act="drop" data-id="${r.id}">수락 취소</button>`:'')}
+  return `<article class="card">
+    <span class="stamp ${cls}">${label}</span>
+    <div class="code">OP-${String(r.id).padStart(4,'0')} · ${esc(r.ago)}</div>
+    <h3>${esc(r.poke)}</h3>
+    <div class="tags">${tags}</div>
+    <dl><dt>보상</dt><dd class="reward">${esc(r.reward)}</dd>${r.taker?`<dt>수락자</dt><dd>${esc(r.taker)}</dd>`:''}</dl>
+    ${r.note?`<p class="note">${esc(r.note)}</p>`:''}
+    <div class="foot"><span class="who">${av(r.by)}${esc(r.by)}</span>${act}</div>
+  </article>`;
+}
+
+function evCard(e,kind){
+  const n=e.who.length, full=n>=e.cap, mine=me&&e.who.includes(me);
+  const pct=Math.min(100,Math.round(n/e.cap*100));
+  let btn;
+  if(mine) btn=`<button class="btn ghost" data-act="${kind}-out" data-id="${e.id}">신청 취소</button>`;
+  else if(full) btn=`<button class="btn" disabled>마감</button>`;
+  else btn=`<button class="btn" data-act="${kind}-in" data-id="${e.id}">${kind==='pvp'?'참가 신청':'참가하기'}</button>`;
+  return `<article class="ev">
+    <div class="date"><div class="m">${e.m}</div><div class="d">${e.d}</div><div class="w">${esc(e.w)}</div></div>
+    <div style="min-width:0">
+      <h3>${esc(e.title)}</h3>
+      <p class="meta">${esc(e.meta)}</p>
+      ${e.prize?`<dl><dt>상품</dt><dd>${esc(e.prize)}</dd></dl>`:''}
+      ${e.lots?`<ul class="lots">${e.lots.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:''}
+      <div class="cap"><span>참가자</span><span>${n} / ${e.cap}명</span></div>
+      <div class="meter${full?' full':''}"><i style="width:${pct}%"></i></div>
+      <div class="names">${e.who.map(w=>`<span class="${w===me?'mine':''}">${esc(w)}</span>`).join('')}</div>
+    </div>
+    <div class="ev-act">${btn}</div>
+  </article>`;
+}
+
+function render(){
+  renderCounts();
+  const main=document.getElementById('main');
+  if(tab==='req'){
+    const list=reqs.filter(r=>filter==='all'||r.status===filter);
+    const fs=[['all','전체'],['open','모집중'],['doing','진행중'],['done','완료']];
+    main.innerHTML=`<div class="bar"><h2>포켓몬 의뢰</h2>
+      <div class="chips">${fs.map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${filter===k}">${l}</button>`).join('')}</div>
+      <button class="btn" data-act="new">+ 의뢰 작성</button></div>
+      ${list.length?`<div class="grid">${list.map(reqCard).join('')}</div>`:`<div class="empty">이 상태의 의뢰가 없어요.</div>`}`;
+  }else if(tab==='pvp'){
+    main.innerHTML=`<div class="bar"><h2>PVP 대회</h2></div><div class="events">${pvps.map(e=>evCard(e,'pvp')).join('')}</div>`;
+  }else{
+    main.innerHTML=`<div class="bar"><h2>경매 참가 모집</h2></div><div class="events">${aucs.map(e=>evCard(e,'auc')).join('')}</div>`;
+  }
+}
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  tab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));render();
+}));
+document.getElementById('loginBtn').addEventListener('click',()=>{
+  if(me){me=null;toast('로그아웃했어요')}else{me='나 (미리보기)';toast('디스코드 로그인 완료 (미리보기)')}
+  renderLogin();render();
+});
+
+document.getElementById('main').addEventListener('click',e=>{
+  const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;render();return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,id=+b.dataset.id;
+  if(act==='new'){if(needLogin())return;document.getElementById('sheet').hidden=false;document.getElementById('fPoke').focus();return}
+  if(needLogin())return;
+  const r=reqs.find(x=>x.id===id);
+  if(act==='take'){r.status='doing';r.taker=me;toast(`${r.poke} 의뢰를 수락했어요`)}
+  if(act==='drop'){r.status='open';delete r.taker;toast('수락을 취소했어요')}
+  if(act==='done'){r.status='done';toast('의뢰를 완료 처리했어요')}
+  if(act==='del'){reqs.splice(reqs.indexOf(r),1);toast('의뢰를 내렸어요')}
+  const ev=(act.startsWith('pvp')?pvps:aucs).find(x=>x.id===id);
+  if(act.endsWith('-in')){ev.who.push(me);toast(`${ev.title}에 신청했어요`)}
+  if(act.endsWith('-out')){ev.who.splice(ev.who.indexOf(me),1);toast('신청을 취소했어요')}
+  render();
+});
+
+const sheet=document.getElementById('sheet'),form=document.getElementById('reqForm');
+document.getElementById('cancelForm').addEventListener('click',()=>{sheet.hidden=true});
+sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')sheet.hidden=true});
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  const tags=[...form.querySelectorAll('.checks input:checked')].map(c=>c.value);
+  reqs.unshift({id:nextId++,poke:document.getElementById('fPoke').value.trim(),tags,nature:document.getElementById('fNature').value.trim(),
+    reward:document.getElementById('fReward').value.trim(),by:me,ago:'방금',status:'open',note:document.getElementById('fNote').value.trim()});
+  form.reset();sheet.hidden=true;filter='all';tab='req';render();toast('의뢰를 올렸어요');
+});
+
+renderLogin();render();
+</script>
+
+</body>
+</html>
