@@ -23,7 +23,7 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 
 ## 1. Supabase: 테이블 만들기
 
-1. `supabase/schema.sql`을 열고 맨 위의 `'YOUR_MC_NAME'`을 **본인 자바 닉네임**으로 바꿉니다.
+1. `supabase/schema.sql` 맨 위의 고정 관리자 닉네임이 `debug_stick`인지 확인합니다.
 2. Supabase 대시보드 → **SQL Editor** → 전체 붙여넣기 → **Run**.
 3. **Project Settings → API Keys**에서 두 개를 복사해 둡니다.
    - `anon` (또는 `publishable`) 키 → `index.html`에 넣을 것

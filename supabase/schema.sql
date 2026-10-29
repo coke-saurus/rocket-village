@@ -6,12 +6,12 @@
 
 -- ---------------------------------------------------------------------
 -- 0. 고정 관리자 (마인크래프트 닉네임)
---    ▼ 아래 'YOUR_MC_NAME' 을 본인 자바 닉네임으로 바꾸세요.
+--    ▼ 아래 고정 관리자 닉네임 (바꾸려면 여기를 수정)
 -- ---------------------------------------------------------------------
 create table if not exists public.fixed_admins (
   mc_name text primary key
 );
-insert into public.fixed_admins (mc_name) values ('YOUR_MC_NAME')
+insert into public.fixed_admins (mc_name) values ('debug_stick')
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------
