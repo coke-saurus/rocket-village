@@ -2,320 +2,1089 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>로켓 마을 작전본부</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로켓단 · 코블몬 마을 본부</title>
+<meta name="description" content="코블몬 서버 로켓단 마을의 의뢰, PVP 대회, 경매, 단원 전용 거래소">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1 29 8.5v15L16 31 3 23.5v-15z' fill='%23e0282f'/%3E%3Cpath d='M16 7c3 2.6 4.4 6.2 4.4 10.4V21h-8.8v-3.6C11.6 13.2 13 9.6 16 7z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-/* Layout: 작전 지령실 — 상단 지휘 바, 탭으로 나뉜 세 개의 지령 보드, 지령서 카드에 도장으로 상태 표시 */
 :root{
-  --bg:#0e0b0c; --panel:#171214; --panel-2:#1f181b; --line:#2e2327;
-  --fg:#f1e9e6; --muted:#9e8f8c; --red:#cf2236; --red-hi:#ff4f5f;
-  --gold:#e3b54c; --ok:#4cb67b; --warn:#e2a03a;
-  --f-display:"Black Han Sans","IBM Plex Sans KR",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-  color-scheme:dark;
+  --bg:#0b0b0e; --bg2:#101015; --panel:#15151b; --panel2:#1c1c24; --line:#2a2a34; --line2:#383845;
+  --text:#ecebf1; --muted:#8f8d9c; --dim:#5f5d6b;
+  --red:#e0282f; --red2:#ff4a50; --redbg:rgba(224,40,47,.12);
+  --gold:#f2c14e; --goldbg:rgba(242,193,78,.12);
+  --ok:#3ecf8e; --okbg:rgba(62,207,142,.12);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --display:'Black Han Sans','Pretendard Variable',sans-serif;
+  --r:10px;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
-  background-image:repeating-linear-gradient(135deg,transparent 0 22px,rgba(207,34,54,.035) 22px 23px)}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-button,input,textarea,select{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--red-hi);outline-offset:2px}
-.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 'Pretendard Variable',Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(1200px 500px at 85% -10%,rgba(224,40,47,.14),transparent 60%),
+             repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 4px)}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 16px}
+[hidden]{display:none!important}
 
-/* header */
-header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#140e10,var(--bg))}
-.top{display:flex;align-items:center;gap:14px;padding-block:18px 14px;flex-wrap:wrap}
-.emblem{width:46px;height:46px;flex:none}
-.brand{min-width:0;flex:1}
-.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4.6vw,34px);line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
-.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
-.login{display:flex;align-items:center;gap:8px;background:#5865f2;border:0;color:#fff;border-radius:6px;padding:9px 14px;font-weight:600;cursor:pointer;white-space:nowrap}
-.login:hover{filter:brightness(1.1)}
-.login.me{background:var(--panel-2);border:1px solid var(--line);color:var(--fg)}
-.login svg{width:18px;height:18px}
-.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-.tab{background:none;border:0;padding:10px 16px 12px;color:var(--muted);font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:8px;align-items:center}
-.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--red)}
-.tab .n{font-family:var(--f-mono);font-size:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;padding:0 6px;color:var(--muted)}
+/* ---------- header ---------- */
+.top{position:sticky;top:0;z-index:20;background:rgba(11,11,14,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:16px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font:400 24px/1 var(--display);letter-spacing:.02em}
+.brand small{display:block;font:500 10px/1 var(--mono);color:var(--muted);letter-spacing:.18em;margin-top:4px}
+.userbox{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0}
+.who{display:flex;align-items:center;gap:8px;min-width:0;text-decoration:none}
+.who .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--panel2);border:1px solid var(--line2);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.hazard{height:4px;background:repeating-linear-gradient(-45deg,var(--red) 0 10px,#160708 10px 20px)}
 
-.demo{font-size:12.5px;color:var(--warn);background:rgba(226,160,58,.08);border:1px dashed rgba(226,160,58,.4);border-radius:4px;padding:7px 12px;margin-block:18px 0}
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:10px 0}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;padding:8px 14px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px;border:1px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--panel)}
+.tab.on{color:var(--text);background:var(--panel2);border-color:var(--line2)}
+.tab.rk{color:var(--red2)}
+.tab.rk.on{background:var(--redbg);border-color:rgba(224,40,47,.45)}
+.tab.ad{color:var(--gold)}
+.tab.ad.on{background:var(--goldbg);border-color:rgba(242,193,78,.4)}
 
-main{padding-block:20px 60px}
-.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.bar h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0 auto 0 0}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted);cursor:pointer}
-.chip[aria-pressed="true"]{color:var(--fg);border-color:var(--red);background:rgba(207,34,54,.14)}
-.btn{background:var(--red);color:#fff;border:0;border-radius:5px;padding:9px 16px;font-weight:600;cursor:pointer;white-space:nowrap}
-.btn:hover{background:#e02a3f}
-.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
-.btn.ghost:hover{border-color:var(--muted)}
-.btn:disabled{background:var(--panel-2);color:var(--muted);cursor:not-allowed}
+/* ---------- common ---------- */
+main{padding:8px 0 80px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.btn.red:hover{background:var(--red2)}
+.btn.ghost{background:transparent}
+.btn.sm{height:30px;padding:0 10px;font-size:13px}
+.btn.danger{color:var(--red2);border-color:rgba(224,40,47,.4);background:transparent}
+.btn.danger:hover{background:var(--redbg)}
+.btn.discord{background:#5865f2;border-color:#5865f2;color:#fff;height:46px;padding:0 22px;font-size:16px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:99px;font:700 11px/1 var(--mono);letter-spacing:.04em;background:var(--panel2);border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+.chip.open{color:var(--ok);background:var(--okbg);border-color:rgba(62,207,142,.35)}
+.chip.red{color:var(--red2);background:var(--redbg);border-color:rgba(224,40,47,.4)}
+.chip.gold{color:var(--gold);background:var(--goldbg);border-color:rgba(242,193,78,.35)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:var(--r)}
 
-/* request cards */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;position:relative;display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden}
-.code{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);letter-spacing:.06em}
-.card h3{margin:0;font-size:19px;font-weight:600;line-height:1.3;padding-right:86px}
-.stamp{position:absolute;top:14px;right:12px;font-family:var(--f-display);font-size:14px;padding:3px 8px;border:2px solid currentColor;border-radius:3px;transform:rotate(6deg);letter-spacing:.04em}
-.s-open{color:var(--red-hi)} .s-doing{color:var(--warn)} .s-done{color:var(--ok)}
-.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-size:12px;padding:2px 8px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line)}
-.tag.shiny{color:var(--gold);border-color:rgba(227,181,76,.45)}
-dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13.5px}
-dt{color:var(--muted)} dd{margin:0;min-width:0;overflow-wrap:anywhere}
-.reward{font-family:var(--f-mono);color:var(--gold);font-weight:700}
-.note{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px;margin:0}
-.foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);flex-wrap:wrap}
-.who{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-right:auto;min-width:0}
-.av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:none}
-.foot .btn{padding:7px 14px;font-size:13.5px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:18px 0 18px}
+.head .code{font:700 11px/1 var(--mono);letter-spacing:.22em;color:var(--red2)}
+.head h1{font:400 32px/1.15 var(--display);margin:8px 0 4px;letter-spacing:.01em}
+.head p{margin:0;color:var(--muted)}
+h2.sec{font:700 12px/1 var(--mono);letter-spacing:.2em;color:var(--muted);margin:34px 0 12px;display:flex;align-items:center;gap:10px}
+h2.sec::after{content:"";flex:1;height:1px;background:var(--line)}
 
-/* events */
-.events{display:grid;gap:14px}
-.ev{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;grid-template-columns:96px 1fr auto;gap:18px;align-items:start}
-.date{text-align:center;border:1px solid var(--line);border-radius:5px;padding:8px 4px;background:var(--panel-2)}
-.date .m{font-family:var(--f-mono);font-size:11px;color:var(--red-hi);letter-spacing:.1em}
-.date .d{font-family:var(--f-display);font-size:34px;line-height:1.1}
-.date .w{font-size:12px;color:var(--muted)}
-.ev h3{margin:0 0 4px;font-size:19px;font-weight:600}
-.ev .meta{font-size:13.5px;color:var(--muted);margin:0 0 10px}
-.meter{height:8px;background:var(--panel-2);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
-.meter i{display:block;height:100%;background:var(--red)}
-.meter.full i{background:var(--muted)}
-.cap{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin:10px 0 6px;font-variant-numeric:tabular-nums}
-.names{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
-.names span{font-size:12px;padding:2px 8px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line)}
-.names span.mine{border-color:var(--red);color:var(--red-hi)}
-.lots{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px}
-.lots li::before{content:"LOT ";font-family:var(--f-mono);font-size:11px;color:var(--muted)}
-.ev-act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:120px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red)}
+.card.closed{opacity:.62}
+.card.closed::before{background:var(--dim)}
+.card .tag{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card .fid{font:700 11px/1 var(--mono);letter-spacing:.14em;color:var(--muted)}
+.card h3{margin:0;font-size:17px;line-height:1.35;word-break:break-word}
+.card .body{margin:0;color:#c9c7d3;white-space:pre-wrap;word-break:break-word;font-size:14px}
+.kvs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.kv{background:var(--bg2);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0}
+.kv span{display:block;font:500 10.5px/1.3 var(--mono);color:var(--muted);letter-spacing:.06em}
+.kv b{display:block;font-weight:600;font-size:13.5px;word-break:break-word}
+.by{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);min-width:0}
+.by .av{width:22px;height:22px;font-size:10px}
+.by strong{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+details.ent{border-top:1px solid var(--line);padding-top:8px}
+details.ent summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:none}
+details.ent summary::-webkit-details-marker{display:none}
+details.ent summary::before{content:"▸ ";color:var(--red2)}
+details.ent[open] summary::before{content:"▾ "}
+.ent ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ent li{font-size:13px;background:var(--bg2);border-radius:6px;padding:6px 9px}
+.ent li b{font-weight:600}
+.ent li span{color:var(--muted)}
 
-/* form */
-.sheet{position:fixed;inset:0;background:rgba(5,3,4,.72);display:grid;place-items:center;z-index:20;padding:16px}
-.form{background:var(--panel);border:1px solid var(--line);border-radius:8px;width:min(520px,100%);max-height:90vh;overflow:auto;padding:22px;display:grid;gap:14px}
-.form h2{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0}
-.field{display:grid;gap:6px}
-.field label,.field .lab{font-size:13px;color:var(--muted);font-weight:500}
-.field input,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:9px 11px;width:100%}
-.field textarea{resize:vertical;min-height:70px}
-.checks{display:flex;flex-wrap:wrap;gap:6px}
-.checks label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
-.checks input{accent-color:var(--red)}
-.row{display:flex;gap:8px;justify-content:flex-end}
+/* ---------- hero ---------- */
+.hero{margin-top:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+.hero .main{position:relative;background:linear-gradient(135deg,#1a0b0d 0%,var(--panel) 55%);border:1px solid rgba(224,40,47,.35);border-radius:14px;padding:28px;overflow:hidden}
+.hero .main::after{content:"R-HQ";position:absolute;right:-8px;bottom:-26px;font:400 120px/1 var(--display);color:rgba(224,40,47,.07);pointer-events:none}
+.hero .code{font:700 11px/1 var(--mono);letter-spacing:.24em;color:var(--red2)}
+.hero h1{font:400 40px/1.1 var(--display);margin:12px 0 10px}
+.hero p{margin:0;color:#c9c7d3;max-width:44ch}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.stat .row{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:14px}
+.stat .row span{color:var(--muted)}
+.feed{display:flex;flex-direction:column;gap:8px}
+.feed a{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px;text-decoration:none}
+.feed a:hover{border-color:var(--line2)}
+.feed .t{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed .when{font:500 12px/1 var(--mono);color:var(--muted);flex:none}
+.notice{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:9px;padding:14px 16px}
+.notice h3{margin:0 0 4px;font-size:16px}
+.notice p{margin:0;white-space:pre-wrap;color:#c9c7d3;font-size:14px}
+.notice .meta{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)}
+.alert{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;border-radius:9px;background:var(--goldbg);border:1px solid rgba(242,193,78,.35);margin-top:14px;font-size:14px}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:6px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
-.empty{color:var(--muted);text-align:center;padding:40px 0;border:1px dashed var(--line);border-radius:6px}
+/* ---------- landing ---------- */
+.landing{min-height:calc(100vh - 140px);display:grid;place-items:center;text-align:center;padding:40px 0}
+.landing .emb svg{width:96px;height:96px}
+.landing h1{font:400 52px/1.05 var(--display);margin:18px 0 10px}
+.landing p{color:var(--muted);margin:0 0 26px}
+.landing .fine{font-size:13px;margin-top:18px}
 
-@media (max-width:640px){
-  .ev{grid-template-columns:64px 1fr;gap:12px}
-  .date .d{font-size:26px}
-  .ev-act{grid-column:1/-1;flex-direction:row}
-  .ev-act .btn{flex:1}
-}
-@media (prefers-reduced-motion:no-preference){
-  .card,.ev{transition:border-color .15s}
-  .card:hover,.ev:hover{border-color:#4a363c}
+/* ---------- sub tabs / table ---------- */
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:7px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--red);color:#fff}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:16px}
+.input,select.input,textarea.input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 11px;outline:none}
+.input:focus{border-color:var(--red)}
+textarea.input{min-height:90px;resize:vertical}
+.members{display:flex;flex-direction:column;gap:8px}
+.mrow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px}
+.mrow .id{display:flex;align-items:center;gap:10px;min-width:0}
+.mrow .id div{min-width:0}
+.mrow .id b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .id small{color:var(--muted);font-size:12px}
+.mrow .mc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.mrow .mc code{font-family:var(--mono);font-size:13px}
+.mrow .ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.mrow select{height:30px;padding:0 8px;border-radius:7px;background:var(--bg2);border:1px solid var(--line2)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+.panel h3{margin:0 0 6px;font-size:16px}
+.panel p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;font-weight:600;color:#c9c7d3}
+.field .hint{font-size:12px;color:var(--muted)}
+.res{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.res .dir{font:700 11px/1 var(--mono);letter-spacing:.1em;padding:6px 8px;border-radius:6px;background:var(--redbg);color:var(--red2);text-align:center}
+.res .dir.in{background:var(--okbg);color:var(--ok)}
+
+/* ---------- modal / toast ---------- */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.66);display:grid;place-items:center;padding:16px}
+.sheet{width:100%;max-width:480px;max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:22px}
+.sheet h3{margin:0 0 4px;font:400 22px/1.2 var(--display)}
+.sheet .sub{margin:0 0 16px;color:var(--muted);font-size:14px}
+.sheet .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.summary{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:14px;font-size:14px}
+.toasts{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;width:min(440px,calc(100% - 32px))}
+.toast{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--ok);border-radius:9px;padding:11px 14px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:up .2s ease-out}
+.toast.err{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--gold)}
+@keyframes up{from{transform:translateY(8px);opacity:0}}
+.demo{background:repeating-linear-gradient(-45deg,rgba(242,193,78,.1) 0 12px,transparent 12px 24px),var(--bg2);border-bottom:1px solid rgba(242,193,78,.3);font-size:13px}
+.demo .wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+.demo b{color:var(--gold)}
+.demo .seg button{padding:4px 10px;font-size:12.5px}
+.steps{list-style:none;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:0;margin:26px 0 22px}
+.steps li{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border:1px solid var(--line2);border-radius:99px;background:var(--panel);font-weight:600;font-size:14px;color:var(--muted)}
+.steps li b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);font:700 12px/1 var(--mono);color:var(--text)}
+.steps li small{font-weight:400;font-size:12px;color:var(--dim)}
+.steps li.done{color:var(--ok);border-color:rgba(62,207,142,.35)}
+.steps li.done b{background:var(--ok);color:#06180f}
+.steps li.cur{color:var(--text);border-color:var(--red)}
+.steps li.cur b{background:var(--red)}
+.gate{margin-top:22px;padding:28px;border-radius:14px;border:1px solid rgba(224,40,47,.5);text-align:center;
+  background:radial-gradient(600px 220px at 50% 0%,rgba(224,40,47,.16),transparent 70%),var(--panel)}
+.gate .steps{margin:0 0 18px}
+.gate h2{font:400 28px/1.2 var(--display);margin:0 0 8px}
+.gate p{color:#c9c7d3;max-width:56ch;margin:0 auto 18px;font-size:14.5px}
+.gate-alt{margin:16px auto 0;max-width:56ch;font-size:13.5px;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.btn.big{height:46px;padding:0 24px;font-size:16px}
+.linked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+.panel .linked + p{margin-top:4px}
+.loading{padding:60px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;letter-spacing:.1em}
+
+@media (max-width:760px){
+  .hero,.two{grid-template-columns:1fr}
+  .hero h1{font-size:32px}
+  .head h1{font-size:26px}
+  .mrow{grid-template-columns:1fr}
+  .mrow .ctl{justify-content:flex-start}
+  .brand small{display:none}
+  .who .nm{max-width:90px}
+  .res{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-
-<header>
+<div id="demo" class="demo" hidden></div>
+<header class="top">
   <div class="wrap">
-    <div class="top">
-      <svg class="emblem" viewBox="0 0 48 48" aria-hidden="true">
-        <polygon points="24,2 44,13 44,35 24,46 4,35 4,13" fill="#cf2236"/>
-        <polygon points="24,8 39,16.5 39,31.5 24,40 9,31.5 9,16.5" fill="#0e0b0c"/>
-        <path d="M24 13c4 3 6 7.5 6 13l-2.5 4h-7L18 26c0-5.5 2-10 6-13z" fill="#f1e9e6"/>
-        <circle cx="24" cy="22" r="2.4" fill="#cf2236"/>
-        <path d="M21 31h6l-3 5z" fill="#e3b54c"/>
+    <a class="brand" href="#home" aria-label="로켓단 홈">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M32 2 58 17v30L32 62 6 47V17z" fill="#e0282f"/>
+        <path d="M32 6 54.5 19v26L32 58 9.5 45V19z" fill="none" stroke="#0b0b0e" stroke-width="2"/>
+        <path d="M32 13c6 5 8.8 12.4 8.8 20.8V41H23.2v-7.2C23.2 25.4 26 18 32 13z" fill="#fff"/>
+        <circle cx="32" cy="27" r="3.4" fill="#e0282f"/>
+        <path d="M23.2 34 17 41.5V45h6.2zM40.8 34 47 41.5V45h-6.2z" fill="#fff"/>
+        <path d="M27 43h10l-2 7.5-3-3.2-3 3.2z" fill="#f2c14e"/>
       </svg>
-      <div class="brand">
-        <h1>로켓 마을 작전본부</h1>
-        <p>코블몬 서버 · 포켓몬 의뢰 · PVP 대회 · 경매 모집</p>
-      </div>
-      <button class="login" id="loginBtn" type="button"></button>
-    </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" data-tab="req" aria-selected="true">포켓몬 의뢰 <span class="n" id="nReq"></span></button>
-      <button class="tab" role="tab" data-tab="pvp" aria-selected="false">PVP 대회 <span class="n" id="nPvp"></span></button>
-      <button class="tab" role="tab" data-tab="auc" aria-selected="false">경매 모집 <span class="n" id="nAuc"></span></button>
-    </nav>
+      <span><b>로켓단</b><small>COBBLEMON VILLAGE HQ</small></span>
+    </a>
+    <div class="userbox" id="userbox"></div>
   </div>
+  <div class="hazard"></div>
+  <div class="wrap"><nav class="tabs" id="tabs" aria-label="메뉴"></nav></div>
 </header>
+<main class="wrap" id="view"><div class="loading">LOADING…</div></main>
+<div class="modal" id="modal" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
-<div class="wrap">
-  <div class="demo">미리보기 버전이에요. 아래 글은 모두 예시이고, 새로고침하면 처음 상태로 돌아가요. DB 연결은 다음 단계에서 붙여요.</div>
-</div>
-
-<main class="wrap" id="main"></main>
-
-<div class="sheet" id="sheet" hidden>
-  <form class="form" id="reqForm">
-    <h2>새 의뢰 작성</h2>
-    <div class="field"><label for="fPoke">원하는 포켓몬</label><input id="fPoke" required placeholder="예: 루카리오"></div>
-    <div class="field"><span class="lab">조건</span>
-      <div class="checks">
-        <label><input type="checkbox" id="cShiny" value="이로치">이로치</label>
-        <label><input type="checkbox" id="c6v" value="6V">6V</label>
-        <label><input type="checkbox" id="c5v" value="5V 이상">5V 이상</label>
-        <label><input type="checkbox" id="cHa" value="숨겨진 특성">숨겨진 특성</label>
-      </div>
-    </div>
-    <div class="field"><label for="fNature">성격 (선택)</label><input id="fNature" placeholder="예: 겁쟁이"></div>
-    <div class="field"><label for="fReward">보상</label><input id="fReward" required placeholder="예: 8,000 포켓달러"></div>
-    <div class="field"><label for="fNote">메모 (선택)</label><textarea id="fNote" placeholder="볼 종류, 거래 가능 시간 등"></textarea></div>
-    <div class="row"><button type="button" class="btn ghost" id="cancelForm">취소</button><button class="btn" type="submit">의뢰 올리기</button></div>
-  </form>
-</div>
-
-<div class="toast" id="toast" hidden></div>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const COLORS=['#cf2236','#7a4bd1','#2a8f6a','#c27a1d','#2f6fb8','#a8326e','#5b6b2a'];
-const color=n=>COLORS[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* =====================================================================
+   설정 — 여기만 채우면 실제 사이트로 동작합니다. (비워두면 데모 모드)
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: 'https://uypuehrhxwybqjfpynez.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_FfFz56_dk2M1c1uurXVYwg_raaLjJog', // 공개용 키 (원래 공개되는 값)
+  MS_LINK_ENABLED: false,    // Mojang 승인을 받은 뒤 true 로 바꾸세요
+  ALLOW_ADMIN_VERIFY: true,  // MS 승인 전까지 "닉네임 등록 → 관리자 인증"으로 임시 활동 허용 (false면 MS 연동만)
+  SHOW_DEMO_LINK: true,      // 첫 화면에 "데모로 둘러보기" 버튼 표시
+};
+const CONFIGURED = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY);
+const DEMO = !CONFIGURED || new URLSearchParams(location.search).has('demo');
 
-let me=null;
-let tab='req', filter='all';
-let nextId=148;
+/* ---------- 게시판 정의 ---------- */
+const BOARDS = {
+  notice:  { name:'공지', code:'NOTICE', fields:[] },
+  request: { name:'포켓몬 의뢰', code:'MISSION', desc:'필요한 포켓몬을 의뢰하고, 잡아줄 트레이너를 찾아요.',
+             join:'의뢰 수락', entryLabel:'수락', msgPh:'예: 내일까지 잡아드릴게요. 저녁 8시에 접속합니다.',
+             fields:[{k:'pokemon',label:'필요한 포켓몬',ph:'예: 이브이 (성격 겁쟁이)'},{k:'reward',label:'보상',ph:'예: 5,000 코블달러'}] },
+  pvp:     { name:'PVP 대회', code:'BATTLE', desc:'대회를 열고 참가 신청을 받아요.',
+             join:'참가 신청', entryLabel:'참가', msgPh:'예: 주말 저녁에만 가능합니다.',
+             fields:[{k:'when',label:'일시',ph:'예: 11/8(토) 저녁 9시'},{k:'rules',label:'규칙',ph:'예: 싱글 6:6, Lv.50 고정'},{k:'capacity',label:'정원',ph:'예: 16',type:'number'}] },
+  auction: { name:'경매 모집', code:'AUCTION', desc:'경매를 예고하고 참여자를 모아요.',
+             join:'참여 신청', entryLabel:'참여', msgPh:'예: 시작가 이상 입찰 의사 있습니다.',
+             fields:[{k:'item',label:'경매 물품',ph:'예: 이로치 리자몽 Lv.60'},{k:'when',label:'일시',ph:'예: 11/2(일) 오후 3시'},{k:'start',label:'시작가',ph:'예: 10,000'}] },
+};
+const ROLE_NAME = { member:'일반', rocket:'로켓단', admin:'관리자' };
+const MC_ERRORS = {
+  cancelled:'Microsoft 로그인을 취소했어요.',
+  state:'인증 시간이 지났어요. 다시 시도해 주세요.',
+  not_approved:'아직 Mojang 승인이 나지 않아 닉네임을 확인할 수 없어요. 관리자 인증을 이용해 주세요.',
+  no_xbox:'이 Microsoft 계정에 Xbox 프로필이 없어요. minecraft.net에 한 번 로그인한 뒤 다시 시도해 주세요.',
+  child:'청소년 계정은 보호자가 Xbox 가족 설정에서 허용해야 해요.',
+  no_java:'이 계정에는 마인크래프트 자바 에디션이 없어요.',
+};
 
-const reqs=[
- {id:147,poke:'루카리오',tags:['이로치','5V 이상','숨겨진 특성'],nature:'겁쟁이',reward:'12,000 포켓달러',by:'shadow_hjk',ago:'12분 전',status:'open',note:'럭셔리볼이면 보상 2천 추가할게요.'},
- {id:146,poke:'한카리아스',tags:['6V'],nature:'명랑',reward:'다이맥스캔디 3개',by:'검은망토',ago:'38분 전',status:'open',note:''},
- {id:145,poke:'갸라도스',tags:['이로치'],nature:'',reward:'5,000 포켓달러',by:'rkt_minsu',ago:'1시간 전',status:'doing',taker:'밤까마귀',note:'대회 전까지 필요해요.'},
- {id:144,poke:'팬텀',tags:['5V 이상'],nature:'겁쟁이',reward:'특성캡슐 1개',by:'dawn_seo',ago:'3시간 전',status:'open',note:''},
- {id:143,poke:'메타몽',tags:['6V'],nature:'',reward:'20,000 포켓달러',by:'카이로',ago:'어제',status:'done',taker:'shadow_hjk',note:'외국산 6V 메타몽 찾습니다.'},
- {id:142,poke:'브리두라스',tags:['숨겨진 특성'],nature:'고집',reward:'금왕관 1개',by:'밤까마귀',ago:'어제',status:'open',note:'알 상태도 괜찮아요.'}
-];
-const pvps=[
- {id:1,title:'10월 정기 랭크전',m:'OCT',d:25,w:'토 20:00',meta:'싱글 · 6마리 중 3마리 · Lv.50 고정',prize:'우승 마스터볼 1개, 준우승 금왕관 2개',cap:16,who:['shadow_hjk','검은망토','rkt_minsu','밤까마귀','dawn_seo','카이로','redcoat_77','민트초코','nightowl','하늘다람','zeroK','곰발바닥']},
- {id:2,title:'더블배틀 친선전',m:'NOV',d:1,w:'토 21:00',meta:'더블 · 4마리 · 레벨 제한 없음',prize:'참가자 전원 이상한사탕 5개',cap:8,who:['카이로','zeroK','곰발바닥','민트초코','nightowl','dawn_seo','검은망토','redcoat_77']}
-];
-const aucs=[
- {id:1,title:'정기 경매 #7',m:'OCT',d:20,w:'화 21:00',meta:'장소: 로켓 마을 지하 경매장 · 진행 스파이스',lots:['이로치 루카리오 6V','특성패치 3개 묶음','금왕관 2개'],cap:10,who:['shadow_hjk','rkt_minsu','하늘다람','zeroK','곰발바닥','redcoat_77']},
- {id:2,title:'전설 포켓몬 특별 경매',m:'NOV',d:8,w:'토 20:30',meta:'참가비 10,000 포켓달러 · 입장 시 납부',lots:['레쿠쟈 5V','이로치 뮤 (교환 불가 표시 없음)'],cap:12,who:['카이로','밤까마귀','dawn_seo']}
-];
-
-const STATUS={open:['모집중','s-open'],doing:['진행중','s-doing'],done:['완료','s-done']};
-
-function toast(t){const el=document.getElementById('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,2200)}
-function needLogin(){if(!me){toast('먼저 디스코드로 로그인해 주세요');return true}return false}
-function av(n){return `<span class="av" style="background:${color(n)}">${esc([...n][0].toUpperCase())}</span>`}
-
-function renderLogin(){
-  const b=document.getElementById('loginBtn');
-  if(me){b.className='login me';b.innerHTML=`${av(me)}<span>${esc(me)}</span>`;b.title='로그아웃'}
-  else{b.className='login';b.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 11.8 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.9-9.8-3.4-13.7ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Z"/></svg>디스코드로 로그인`;b.title=''}
+/* ---------- 유틸 ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = (n) => String(n).padStart(4, '0');
+function ago(iso){
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60) return '방금';
+  if (s < 3600) return `${Math.floor(s/60)}분 전`;
+  if (s < 86400) return `${Math.floor(s/3600)}시간 전`;
+  if (s < 86400*7) return `${Math.floor(s/86400)}일 전`;
+  return new Date(iso).toLocaleDateString('ko-KR', { month:'short', day:'numeric' });
+}
+function avatar(p){
+  if (p?.discord_avatar) return `<span class="av"><img src="${esc(p.discord_avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
+  const ch = (p?.mc_name || p?.discord_name || '?').trim().charAt(0).toUpperCase();
+  return `<span class="av">${esc(ch)}</span>`;
+}
+const nameOf = (p) => p?.mc_name || p?.discord_name || '알 수 없음';
+function toast(msg, kind=''){
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`; el.textContent = msg;
+  $('#toasts').append(el);
+  setTimeout(() => el.remove(), kind === 'err' || kind === 'warn' ? 6500 : 3800);
 }
 
-function renderCounts(){
-  document.getElementById('nReq').textContent=reqs.filter(r=>r.status==='open').length;
-  document.getElementById('nPvp').textContent=pvps.length;
-  document.getElementById('nAuc').textContent=aucs.length;
+/* ---------- 모달 ---------- */
+let modalState = null;
+function openForm({ title, sub='', html='', submit='확인', danger=false, onSubmit, onCancel }){
+  modalState = { onSubmit, onCancel };
+  $('#modal').innerHTML = `
+    <form class="sheet" id="mform" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+      <h3>${esc(title)}</h3>${sub ? `<p class="sub">${sub}</p>` : ''}
+      ${html}
+      <div class="foot">
+        <button type="button" class="btn ghost" data-act="close-modal">취소</button>
+        <button type="submit" class="btn ${danger ? 'danger' : 'red'}">${esc(submit)}</button>
+      </div>
+    </form>`;
+  $('#modal').hidden = false;
+  setTimeout(() => $('#mform input:not([type=hidden]), #mform textarea')?.focus(), 30);
+}
+function closeModal(cancelled=true){
+  if (cancelled) modalState?.onCancel?.();
+  modalState = null;
+  $('#modal').hidden = true; $('#modal').innerHTML = '';
+}
+function ask(title, text, submit='확인', danger=false){
+  return new Promise(res => openForm({ title, sub:esc(text), submit, danger, onSubmit:() => res(true), onCancel:() => res(false) }));
+}
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'mform') return;
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const st = modalState; modalState = { ...st, onCancel:null };
+    await st.onSubmit(data);
+    closeModal(false);
+  } catch (err) { toast(err.message || String(err), 'err'); btn.disabled = false; }
+});
+$('#modal').addEventListener('mousedown', (e) => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+/* =====================================================================
+   데이터 계층 — Supabase
+   ===================================================================== */
+function makeSupaApi(){
+  const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  const AUTH = 'author:profiles(id,mc_name,discord_name,discord_avatar)';
+  const run = async (p) => { const { data, error } = await p; if (error) throw new Error(friendly(error)); return data; };
+  function friendly(e){
+    const m = e.message || '';
+    if (/row-level security|permission denied/i.test(m)) return '권한이 없어요.';
+    if (/duplicate key/i.test(m)) return '이미 처리된 요청이에요.';
+    if (/profiles_verified_mc_name/i.test(m)) return '이미 다른 사람이 인증받은 닉네임이에요.';
+    if (/mc_name_check/i.test(m)) return '닉네임은 영문, 숫자, _ 만 쓸 수 있어요 (최대 16자).';
+    return m;
+  }
+  async function call(path, body){
+    const { data:{ session } } = await sb.auth.getSession();
+    const r = await fetch(path, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session?.access_token||''}` }, body:JSON.stringify(body||{}) });
+    let j = {}; try { j = await r.json(); } catch {}
+    if (!r.ok) throw new Error(j.error || `서버 오류 (${r.status})`);
+    return j;
+  }
+  return {
+    demo:false,
+    onAuth(cb){ sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') cb(); }); },
+    login(){ return sb.auth.signInWithOAuth({ provider:'discord', options:{ redirectTo: location.origin + location.pathname } }); },
+    async logout(){ await sb.auth.signOut(); },
+    async me(){
+      const { data:{ session } } = await sb.auth.getSession();
+      if (!session) return null;
+      const p = await run(sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle());
+      if (!p) throw new Error('프로필이 없어요. Supabase에 schema.sql을 실행했는지 확인해 주세요.');
+      const md = session.user.user_metadata || {};
+      const dn = md.custom_claims?.global_name || md.full_name || md.name || p.discord_name;
+      const da = md.avatar_url || null;
+      if (dn !== p.discord_name || da !== p.discord_avatar) {
+        await sb.from('profiles').update({ discord_name:dn, discord_avatar:da }).eq('id', p.id);
+        p.discord_name = dn; p.discord_avatar = da;
+      }
+      const acc = await run(sb.rpc('my_access'));
+      return { ...p, acc };
+    },
+    listPosts(boards, limit=60){
+      return run(sb.from('posts')
+        .select(`*, ${AUTH}, entries(id,user_id,message,created_at,user:profiles(id,mc_name,discord_name,discord_avatar))`)
+        .in('board', [].concat(boards)).order('created_at', { ascending:false }).limit(limit));
+    },
+    createPost(d){ return run(sb.from('posts').insert(d).select().single()); },
+    setPostStatus(id, status){ return run(sb.from('posts').update({ status }).eq('id', id)); },
+    deletePost(id){ return run(sb.from('posts').delete().eq('id', id)); },
+    createEntry(post_id, message){ return run(sb.from('entries').insert({ post_id, message }).select().single()); },
+    deleteEntry(id){ return run(sb.from('entries').delete().eq('id', id)); },
+    listListings(kind){
+      return run(sb.from('rocket_listings')
+        .select(`*, ${AUTH}, rocket_reservations(id,status,requester_id)`)
+        .eq('kind', kind).order('created_at', { ascending:false }).limit(100));
+    },
+    createListing(d){ return run(sb.from('rocket_listings').insert(d).select().single()); },
+    setListingStatus(id, status){ return run(sb.from('rocket_listings').update({ status }).eq('id', id)); },
+    deleteListing(id){ return run(sb.from('rocket_listings').delete().eq('id', id)); },
+    createReservation(listing_id, message){ return run(sb.from('rocket_reservations').insert({ listing_id, message }).select().single()); },
+    listReservations(){
+      return run(sb.from('rocket_reservations')
+        .select('*, listing:rocket_listings(id,kind,pokemon,details,author_id,author:profiles(id,mc_name,discord_name,discord_avatar)), requester:profiles(id,mc_name,discord_name,discord_avatar)')
+        .order('created_at', { ascending:false }).limit(100));
+    },
+    setReservationStatus(id, status){ return run(sb.from('rocket_reservations').update({ status }).eq('id', id)); },
+    async setMcName(id, mc_name){ return run(sb.from('profiles').update({ mc_name }).eq('id', id)); },
+    listProfiles(){ return run(sb.from('profiles').select('*').order('created_at', { ascending:true })); },
+    async fixedAdmins(){ return (await run(sb.from('fixed_admins').select('mc_name'))).map(r => r.mc_name); },
+    updateProfile(id, patch){ return run(sb.from('profiles').update(patch).eq('id', id)); },
+    async notify(type, id){ try { return await call('/api/notify', { type, id }); } catch (e) { return { ok:false, error:e.message }; } },
+    async msStart(){ const j = await call('/api/ms-start'); location.href = j.url; },
+  };
 }
 
-function reqCard(r){
-  const [label,cls]=STATUS[r.status];
-  const tags=[...r.tags.map(t=>`<span class="tag${t==='이로치'?' shiny':''}">${t==='이로치'?'✦ ':''}${esc(t)}</span>`),r.nature?`<span class="tag">성격: ${esc(r.nature)}</span>`:''].join('');
-  let act='';
-  if(r.status==='open'){act=r.by===me?`<button class="btn ghost" data-act="del" data-id="${r.id}">내리기</button>`:`<button class="btn" data-act="take" data-id="${r.id}">수락하기</button>`}
-  else if(r.status==='doing'){act=(r.by===me)?`<button class="btn" data-act="done" data-id="${r.id}">완료 처리</button>`:(r.taker===me?`<button class="btn ghost" data-act="drop" data-id="${r.id}">수락 취소</button>`:'')}
-  return `<article class="card">
-    <span class="stamp ${cls}">${label}</span>
-    <div class="code">OP-${String(r.id).padStart(4,'0')} · ${esc(r.ago)}</div>
-    <h3>${esc(r.poke)}</h3>
-    <div class="tags">${tags}</div>
-    <dl><dt>보상</dt><dd class="reward">${esc(r.reward)}</dd>${r.taker?`<dt>수락자</dt><dd>${esc(r.taker)}</dd>`:''}</dl>
-    ${r.note?`<p class="note">${esc(r.note)}</p>`:''}
-    <div class="foot"><span class="who">${av(r.by)}${esc(r.by)}</span>${act}</div>
-  </article>`;
+/* =====================================================================
+   데이터 계층 — 데모 (설정 전 미리보기, 저장되지 않음)
+   ===================================================================== */
+function makeDemoApi(){
+  const H = 3600e3, now = Date.now(), t = (h) => new Date(now - h*H).toISOString();
+  const D = {
+    fixed:['RKT_Boss'],
+    profiles:[
+      { id:'u1', discord_id:'1', discord_name:'보스', mc_name:'RKT_Boss', mc_verified:true, mc_verified_via:'admin', role:'member', created_at:t(900) },
+      { id:'u2', discord_id:'2', discord_name:'흑장미', mc_name:'BlackTulip', mc_verified:true, mc_verified_via:'microsoft', role:'rocket', created_at:t(700) },
+      { id:'u3', discord_id:'3', discord_name:'올빼미', mc_name:'NightOwl_7', mc_verified:true, mc_verified_via:'admin', role:'rocket', created_at:t(500) },
+      { id:'u4', discord_id:'4', discord_name:'초보트레이너', mc_name:'Pallet_Kid', mc_verified:true, mc_verified_via:'admin', role:'member', created_at:t(300) },
+      { id:'u5', discord_id:'5', discord_name:'미나', mc_name:null, mc_verified:false, role:'member', created_at:t(4) },
+      { id:'u6', discord_id:'6', discord_name:'지우개', mc_name:'Eraser_99', mc_verified:false, role:'member', created_at:t(2) },
+    ],
+    posts:[
+      { id:1, board:'notice', title:'로켓단 마을 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
+      { id:2, board:'request', title:'성격 겁쟁이 이브이 구해요', body:'개체값은 상관없어요. 마을 창고 앞에서 거래해요.', meta:{ pokemon:'이브이 (겁쟁이)', reward:'5,000 코블달러' }, status:'open', author_id:'u4', created_at:t(5) },
+      { id:3, board:'request', title:'얼음돌 3개 필요합니다', body:'', meta:{ pokemon:'얼음돌 x3', reward:'썬더스톤 1개' }, status:'closed', author_id:'u3', created_at:t(52) },
+      { id:4, board:'pvp', title:'제1회 로켓단 컵 (싱글 배틀)', body:'우승자에게 마스터볼 1개!', meta:{ when:'11/8(토) 저녁 9시', rules:'싱글 6:6 · Lv.50 고정', capacity:'8' }, status:'open', author_id:'u1', created_at:t(12) },
+      { id:5, board:'auction', title:'이로치 리자몽 경매 예고', body:'마을 광장에서 진행합니다.', meta:{ item:'이로치 리자몽 Lv.60', when:'11/2(일) 오후 3시', start:'10,000' }, status:'open', author_id:'u2', created_at:t(20) },
+    ],
+    entries:[
+      { id:1, post_id:4, user_id:'u2', message:'참가합니다!', created_at:t(10) },
+      { id:2, post_id:4, user_id:'u3', message:'주말 저녁 가능', created_at:t(8) },
+      { id:3, post_id:5, user_id:'u4', message:'시작가 이상 입찰 의사 있습니다.', created_at:t(3) },
+    ],
+    listings:[
+      { id:1, kind:'have', pokemon:'메타몽', details:'Lv.30 · 개체값 5V · 교배용으로 빌려드려요', status:'open', author_id:'u3', created_at:t(9) },
+      { id:2, kind:'have', pokemon:'두랄루돈', details:'Lv.45 · 성격 고집', status:'open', author_id:'u2', created_at:t(26) },
+      { id:3, kind:'need', pokemon:'저리더프', details:'진화용 · 레벨 무관', status:'open', author_id:'u2', created_at:t(2) },
+      { id:4, kind:'need', pokemon:'히바니', details:'숨겨진 특성(리베로)이면 좋아요', status:'done', author_id:'u3', created_at:t(80) },
+    ],
+    reservations:[
+      { id:1, listing_id:2, requester_id:'u3', message:'오늘 밤 10시에 접속해요!', status:'pending', created_at:t(1) },
+    ],
+  };
+  let role = 'new', loggedIn = false, seq = 100;
+  const meId = () => ({ new:'u5', member:'u4', rocket:'u2', admin:'u1' })[role];
+  const prof = (id) => D.profiles.find(p => p.id === id);
+  const pub = (p) => p && { id:p.id, mc_name:p.mc_name, discord_name:p.discord_name, discord_avatar:null };
+  const isFixed = (p) => !!p && p.mc_verified && D.fixed.some(f => f.toLowerCase() === String(p.mc_name).toLowerCase());
+  const access = (p) => { const fixed = isFixed(p), admin = fixed || p.role === 'admin'; return { fixed, admin, rocket: admin || p.role === 'rocket', verified: !!p.mc_verified }; };
+  const newest = (a, b) => new Date(b.created_at) - new Date(a.created_at);
+  const nowIso = () => new Date().toISOString();
+  const pause = () => new Promise(r => setTimeout(r, 90));
+  const byId = (arr, id) => arr.find(x => x.id === id);
+  return {
+    demo:true,
+    get role(){ return role; }, get loggedIn(){ return loggedIn; },
+    setRole(r){ role = r; loggedIn = true; },
+    onAuth(){},
+    async login(){ await pause(); loggedIn = true; role = 'new'; toast('(데모) 디스코드 로그인 완료 — 처음 가입한 회원 시점이에요.'); },
+    async logout(){ loggedIn = false; },
+    async me(){ if (!loggedIn) return null; const p = prof(meId()); return { ...p, acc:access(p) }; },
+    async listPosts(boards, limit=60){
+      await pause(); const bs = [].concat(boards);
+      return D.posts.filter(p => bs.includes(p.board)).sort(newest).slice(0, limit).map(p => ({
+        ...p, author:pub(prof(p.author_id)),
+        entries:D.entries.filter(e => e.post_id === p.id).map(e => ({ ...e, user:pub(prof(e.user_id)) })),
+      }));
+    },
+    async createPost(d){ const p = { id:++seq, ...d, status:'open', author_id:meId(), created_at:nowIso() }; D.posts.push(p); return p; },
+    async setPostStatus(id, s){ byId(D.posts, id).status = s; },
+    async deletePost(id){ D.posts = D.posts.filter(p => p.id !== id); D.entries = D.entries.filter(e => e.post_id !== id); },
+    async createEntry(post_id, message){ if (D.entries.some(e => e.post_id === post_id && e.user_id === meId())) throw new Error('이미 처리된 요청이에요.'); const e = { id:++seq, post_id, user_id:meId(), message, created_at:nowIso() }; D.entries.push(e); return e; },
+    async deleteEntry(id){ D.entries = D.entries.filter(e => e.id !== id); },
+    async listListings(kind){
+      await pause();
+      return D.listings.filter(l => l.kind === kind).sort(newest).map(l => ({
+        ...l, author:pub(prof(l.author_id)),
+        rocket_reservations:D.reservations.filter(r => r.listing_id === l.id).map(r => ({ id:r.id, status:r.status, requester_id:r.requester_id })),
+      }));
+    },
+    async createListing(d){ const l = { id:++seq, ...d, status:'open', author_id:meId(), created_at:nowIso() }; D.listings.push(l); return l; },
+    async setListingStatus(id, s){ byId(D.listings, id).status = s; },
+    async deleteListing(id){ D.listings = D.listings.filter(l => l.id !== id); D.reservations = D.reservations.filter(r => r.listing_id !== id); },
+    async createReservation(listing_id, message){ const r = { id:++seq, listing_id, requester_id:meId(), message, status:'pending', created_at:nowIso() }; D.reservations.push(r); return r; },
+    async listReservations(){
+      await pause(); const me = meId(), admin = access(prof(me)).admin;
+      return D.reservations.filter(r => admin || r.requester_id === me || byId(D.listings, r.listing_id)?.author_id === me).sort(newest).map(r => {
+        const l = byId(D.listings, r.listing_id);
+        return { ...r, listing:{ ...l, author:pub(prof(l.author_id)) }, requester:pub(prof(r.requester_id)) };
+      });
+    },
+    async setReservationStatus(id, s){ byId(D.reservations, id).status = s; },
+    async setMcName(id, name){ const p = prof(id); p.mc_name = name; p.mc_verified = false; p.mc_verified_via = null; },
+    async listProfiles(){ await pause(); return D.profiles.map(p => ({ ...p })); },
+    async fixedAdmins(){ return D.fixed.slice(); },
+    async updateProfile(id, patch){ const p = prof(id); Object.assign(p, patch); if ('mc_verified' in patch) p.mc_verified_via = patch.mc_verified ? 'admin' : null; },
+    async notify(){ await pause(); return { ok:true, demo:true, dm:{ owner:true, requester:true, author:true } }; },
+    async msStart(){
+      const p = prof(meId());
+      toast('(데모) Microsoft 로그인 중… 실제로는 Microsoft 로그인 창으로 이동해요.');
+      await new Promise(r => setTimeout(r, 900));
+      p.mc_name = p.mc_name || 'Mina_Trainer'; p.mc_verified = true; p.mc_verified_via = 'microsoft';
+      toast(`마인크래프트 닉네임 ${p.mc_name} 인증 완료! 이제 활동할 수 있어요.`);
+    },
+  };
 }
 
-function evCard(e,kind){
-  const n=e.who.length, full=n>=e.cap, mine=me&&e.who.includes(me);
-  const pct=Math.min(100,Math.round(n/e.cap*100));
-  let btn;
-  if(mine) btn=`<button class="btn ghost" data-act="${kind}-out" data-id="${e.id}">신청 취소</button>`;
-  else if(full) btn=`<button class="btn" disabled>마감</button>`;
-  else btn=`<button class="btn" data-act="${kind}-in" data-id="${e.id}">${kind==='pvp'?'참가 신청':'참가하기'}</button>`;
-  return `<article class="ev">
-    <div class="date"><div class="m">${e.m}</div><div class="d">${e.d}</div><div class="w">${esc(e.w)}</div></div>
-    <div style="min-width:0">
-      <h3>${esc(e.title)}</h3>
-      <p class="meta">${esc(e.meta)}</p>
-      ${e.prize?`<dl><dt>상품</dt><dd>${esc(e.prize)}</dd></dl>`:''}
-      ${e.lots?`<ul class="lots">${e.lots.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`:''}
-      <div class="cap"><span>참가자</span><span>${n} / ${e.cap}명</span></div>
-      <div class="meter${full?' full':''}"><i style="width:${pct}%"></i></div>
-      <div class="names">${e.who.map(w=>`<span class="${w===me?'mine':''}">${esc(w)}</span>`).join('')}</div>
-    </div>
-    <div class="ev-act">${btn}</div>
-  </article>`;
+/* =====================================================================
+   화면
+   ===================================================================== */
+const S = { api:null, me:null, rocketTab:'have', memberQuery:'' };
+const acc = () => S.me?.acc || {};
+
+function tabList(){
+  const t = [['home','홈'],['request','포켓몬 의뢰'],['pvp','PVP 대회'],['auction','경매']];
+  if (acc().rocket) t.push(['rocket','로켓단','rk']);
+  if (acc().admin) t.push(['admin','관리자','ad']);
+  t.push(['me','내 정보']);
+  return t;
+}
+function currentTab(){
+  const h = location.hash.slice(1) || 'home';
+  return tabList().some(([k]) => k === h) ? h : 'home';
 }
 
-function render(){
-  renderCounts();
-  const main=document.getElementById('main');
-  if(tab==='req'){
-    const list=reqs.filter(r=>filter==='all'||r.status===filter);
-    const fs=[['all','전체'],['open','모집중'],['doing','진행중'],['done','완료']];
-    main.innerHTML=`<div class="bar"><h2>포켓몬 의뢰</h2>
-      <div class="chips">${fs.map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${filter===k}">${l}</button>`).join('')}</div>
-      <button class="btn" data-act="new">+ 의뢰 작성</button></div>
-      ${list.length?`<div class="grid">${list.map(reqCard).join('')}</div>`:`<div class="empty">이 상태의 의뢰가 없어요.</div>`}`;
-  }else if(tab==='pvp'){
-    main.innerHTML=`<div class="bar"><h2>PVP 대회</h2></div><div class="events">${pvps.map(e=>evCard(e,'pvp')).join('')}</div>`;
-  }else{
-    main.innerHTML=`<div class="bar"><h2>경매 참가 모집</h2></div><div class="events">${aucs.map(e=>evCard(e,'auc')).join('')}</div>`;
+function renderShell(){
+  const demo = $('#demo');
+  demo.hidden = !S.api.demo;
+  if (S.api.demo) {
+    const roles = { new:'신규 가입', member:'일반', rocket:'로켓단', admin:'관리자' };
+    demo.innerHTML = `<div class="wrap"><b>데모 모드</b><span class="muted">가짜 데이터라 저장되지 않아요.</span>
+      ${S.api.loggedIn
+        ? `<span class="muted">시점 바꾸기:</span><div class="seg">${Object.entries(roles).map(([r, n]) => `<button data-act="demo-role" data-role="${r}" class="${S.api.role === r ? 'on' : ''}">${n}</button>`).join('')}</div>`
+        : '<span class="muted">디스코드 로그인 버튼을 눌러 시작해 보세요.</span>'}
+      ${CONFIGURED ? '<button class="btn sm ghost" data-act="exit-demo" style="margin-left:auto">데모 끝내기</button>' : ''}</div>`;
+  }
+  const me = S.me, a = acc();
+  $('#userbox').innerHTML = !me ? '' : `
+    ${a.fixed ? '<span class="chip gold">고정 관리자</span>' : a.admin ? '<span class="chip gold">관리자</span>' : a.rocket ? '<span class="chip red">로켓단</span>' : !a.verified ? '<span class="chip gold">미연동</span>' : ''}
+    <a class="who" href="#me">${avatar(me)}<span class="nm">${esc(nameOf(me))}</span></a>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button>`;
+  const cur = currentTab();
+  $('#tabs').innerHTML = !me ? '' : tabList().map(([k, label, cls]) =>
+    `<a class="tab ${cls||''} ${k === cur ? 'on' : ''}" href="#${k}">${label}</a>`).join('');
+}
+
+async function renderView(){
+  const v = $('#view');
+  if (!S.me) { v.innerHTML = landing(); return; }
+  const tab = currentTab();
+  document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${tab}`));
+  $('.tab.on')?.scrollIntoView({ block:'nearest', inline:'center' });
+  v.innerHTML = '<div class="loading">LOADING…</div>';
+  try {
+    let html = '';
+    if (tab === 'home') html = await viewHome();
+    else if (BOARDS[tab]) html = await viewBoard(tab);
+    else if (tab === 'rocket') html = await viewRocket();
+    else if (tab === 'admin') html = await viewAdmin();
+    else if (tab === 'me') html = viewMe();
+    const banner = !acc().verified && tab !== 'home' && tab !== 'me' ? gateBanner() : '';
+    v.innerHTML = banner + html;
+  } catch (e) {
+    v.innerHTML = `<div class="empty">불러오지 못했어요: ${esc(e.message)}</div>`;
   }
 }
 
-document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
-  tab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));render();
-}));
-document.getElementById('loginBtn').addEventListener('click',()=>{
-  if(me){me=null;toast('로그아웃했어요')}else{me='나 (미리보기)';toast('디스코드 로그인 완료 (미리보기)')}
-  renderLogin();render();
-});
+async function refresh(){
+  try { S.me = await S.api.me(); }
+  catch (e) { S.me = null; toast(e.message, 'err'); }
+  renderShell();
+  await renderView();
+}
 
-document.getElementById('main').addEventListener('click',e=>{
-  const f=e.target.closest('[data-filter]');if(f){filter=f.dataset.filter;render();return}
-  const b=e.target.closest('[data-act]');if(!b)return;
-  const act=b.dataset.act,id=+b.dataset.id;
-  if(act==='new'){if(needLogin())return;document.getElementById('sheet').hidden=false;document.getElementById('fPoke').focus();return}
-  if(needLogin())return;
-  const r=reqs.find(x=>x.id===id);
-  if(act==='take'){r.status='doing';r.taker=me;toast(`${r.poke} 의뢰를 수락했어요`)}
-  if(act==='drop'){r.status='open';delete r.taker;toast('수락을 취소했어요')}
-  if(act==='done'){r.status='done';toast('의뢰를 완료 처리했어요')}
-  if(act==='del'){reqs.splice(reqs.indexOf(r),1);toast('의뢰를 내렸어요')}
-  const ev=(act.startsWith('pvp')?pvps:aucs).find(x=>x.id===id);
-  if(act.endsWith('-in')){ev.who.push(me);toast(`${ev.title}에 신청했어요`)}
-  if(act.endsWith('-out')){ev.who.splice(ev.who.indexOf(me),1);toast('신청을 취소했어요')}
-  render();
-});
+/* ---------- 로그인 전 ---------- */
+function landing(){
+  return `<section class="landing"><div>
+    <div class="emb">${$('.brand svg').outerHTML}</div>
+    <h1>로켓단 본부</h1>
+    <p>코블몬 서버 로켓단 마을의 의뢰 · 대회 · 경매 게시판</p>
+    <button class="btn discord" data-act="login">디스코드로 로그인</button>
+    <ol class="steps">
+      <li><b>1</b>디스코드 로그인</li>
+      <li><b>2</b>Microsoft 연동<small>마인크래프트 닉네임 확인</small></li>
+      <li><b>3</b>활동 시작</li>
+    </ol>
+    ${CONFIG.SHOW_DEMO_LINK && !S.api.demo ? '<button class="btn sm ghost" data-act="demo-start">데모(가짜 데이터)로 둘러보기</button>' : ''}
+  </div></section>`;
+}
 
-const sheet=document.getElementById('sheet'),form=document.getElementById('reqForm');
-document.getElementById('cancelForm').addEventListener('click',()=>{sheet.hidden=true});
-sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.hidden=true});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')sheet.hidden=true});
-form.addEventListener('submit',e=>{
+/* ---------- Microsoft 연동 안내 ---------- */
+const msReady = () => S.api.demo || CONFIG.MS_LINK_ENABLED;
+const manualAllowed = () => !msReady() && CONFIG.ALLOW_ADMIN_VERIFY;
+
+function gate(){
+  const me = S.me;
+  let action;
+  if (msReady()) {
+    action = `<button class="btn red big" data-act="ms-link">Microsoft로 연동하기</button>`;
+  } else if (manualAllowed()) {
+    action = `<button class="btn big" disabled>Microsoft 연동 준비 중</button>
+      <div class="gate-alt">${me.mc_name
+        ? `<span>임시 방법: 등록한 닉네임 <b class="mono">${esc(me.mc_name)}</b>을 관리자가 확인하고 있어요. 인증되면 바로 활동할 수 있어요.</span>`
+        : `<span>임시 방법: Microsoft 연동이 열리기 전까지는 <b>내 정보</b>에서 닉네임을 등록하면 관리자가 확인 후 인증해 드려요.</span>
+           <a class="btn sm" href="#me">닉네임 등록하기</a>`}</div>`;
+  } else {
+    action = `<button class="btn big" disabled>Microsoft 연동 준비 중</button>
+      <div class="gate-alt"><span>Microsoft 연동이 열리면 공지로 알려드릴게요.</span></div>`;
+  }
+  return `<section class="gate">
+    <ol class="steps"><li class="done"><b>✓</b>디스코드 로그인</li><li class="cur"><b>2</b>Microsoft 연동</li><li><b>3</b>활동 시작</li></ol>
+    <h2>Microsoft 연동을 해야 활동할 수 있어요</h2>
+    <p>마인크래프트를 구매한 Microsoft 계정으로 로그인하면 자바 닉네임이 자동으로 확인돼요.
+       연동 전에는 글을 둘러볼 수만 있고, 글쓰기 · 신청 · 예약은 할 수 없어요.</p>
+    ${action}
+  </section>`;
+}
+function gateBanner(){
+  return `<div class="alert"><span><b>Microsoft 연동 후 활동할 수 있어요.</b> 지금은 둘러보기만 가능해요.</span>
+    ${msReady() ? '<button class="btn sm red" data-act="ms-link">연동하기</button>' : '<a class="btn sm" href="#home">안내 보기</a>'}</div>`;
+}
+
+/* ---------- 홈 ---------- */
+async function viewHome(){
+  const [notices, recent] = await Promise.all([
+    S.api.listPosts('notice', 3),
+    S.api.listPosts(['request','pvp','auction'], 8),
+  ]);
+  const me = S.me, a = acc();
+  const openCount = recent.filter(p => p.status === 'open').length;
+  return `
+  ${a.verified ? '' : gate()}
+  <section class="hero">
+    <div class="main">
+      <div class="code">ROCKET VILLAGE · HQ</div>
+      <h1>어서 와, ${esc(nameOf(me))}</h1>
+      <p>의뢰를 맡기고, 대회에 나가고, 경매에 참여하세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
+    </div>
+    <div class="stat">
+      <div class="row"><span>내 권한</span><b>${a.fixed ? '고정 관리자' : a.admin ? '관리자' : a.rocket ? '로켓단' : '일반'}</b></div>
+      <div class="row"><span>마인크래프트</span><b class="mono">${esc(me.mc_name || '미등록')}</b></div>
+      <div class="row"><span>Microsoft 연동</span>${a.verified ? '<span class="chip open">완료</span>' : '<span class="chip gold">필요</span>'}</div>
+      <div class="row"><span>모집 중인 글</span><b>${openCount}개</b></div>
+    </div>
+  </section>
+
+  <h2 class="sec">NOTICE · 공지</h2>
+  ${a.admin ? `<div class="toolbar"><span></span><button class="btn sm" data-act="write" data-board="notice">공지 쓰기</button></div>` : ''}
+  ${notices.length ? `<div class="feed">${notices.map(n => `
+    <div class="notice">
+      <h3>${esc(n.title)}</h3>
+      ${n.body ? `<p>${esc(n.body)}</p>` : ''}
+      <div class="meta"><span>${esc(nameOf(n.author))}</span><span class="mono">${ago(n.created_at)}</span>
+        ${a.admin ? `<button class="btn sm danger" data-act="del-post" data-id="${n.id}">삭제</button>` : ''}</div>
+    </div>`).join('')}</div>` : '<div class="empty">아직 공지가 없어요.</div>'}
+
+  <h2 class="sec">LATEST · 최근 글</h2>
+  ${recent.length ? `<div class="feed">${recent.map(p => `
+    <a href="#${p.board}">
+      <span class="chip ${p.status === 'open' ? 'red' : ''}">${BOARDS[p.board].code}</span>
+      <span class="t">${esc(p.title)}</span>
+      <span class="when">${ago(p.created_at)}</span>
+    </a>`).join('')}</div>` : '<div class="empty">아직 글이 없어요. 첫 의뢰를 올려보세요!</div>'}`;
+}
+
+/* ---------- 게시판 ---------- */
+async function viewBoard(board){
+  const B = BOARDS[board], a = acc();
+  const posts = await S.api.listPosts(board);
+  const writeBtn = a.verified
+    ? `<button class="btn red" data-act="write" data-board="${board}">+ 글쓰기</button>`
+    : `<button class="btn" disabled title="Microsoft 연동 후 이용 가능">연동 후 글쓰기</button>`;
+  return `
+  <div class="head"><div><div class="code">${B.code}</div><h1>${B.name}</h1><p>${B.desc}</p></div>${writeBtn}</div>
+  ${posts.length ? `<div class="grid">${posts.map(postCard).join('')}</div>` : '<div class="empty">아직 글이 없어요.</div>'}`;
+}
+
+function postCard(p){
+  const B = BOARDS[p.board], a = acc(), me = S.me;
+  const mine = p.author_id === me.id;
+  const entries = p.entries || [];
+  const myEntry = entries.find(e => e.user_id === me.id);
+  const cap = Number(String(p.meta?.capacity || '').replace(/[^0-9]/g, '')) || 0;
+  const full = cap > 0 && entries.length >= cap;
+  const open = p.status === 'open';
+  const kvs = B.fields.filter(f => p.meta?.[f.k]).map(f =>
+    `<div class="kv"><span>${esc(f.label)}</span><b>${esc(p.meta[f.k])}${f.k === 'capacity' ? `명 (${entries.length}명 신청)` : ''}</b></div>`).join('');
+
+  let join = '';
+  if (open && !mine) {
+    if (myEntry) join = `<button class="btn sm" data-act="leave" data-id="${myEntry.id}">신청 취소</button>`;
+    else if (!a.verified) join = `<button class="btn sm" disabled>연동 후 신청</button>`;
+    else if (full) join = `<button class="btn sm" disabled>정원 마감</button>`;
+    else join = `<button class="btn sm red" data-act="join" data-id="${p.id}">${B.join}</button>`;
+  }
+  const manage = (mine || a.admin)
+    ? `<button class="btn sm ghost" data-act="post-status" data-id="${p.id}" data-status="${open ? 'closed' : 'open'}">${open ? '마감하기' : '다시 열기'}</button>` : '';
+  const del = a.admin ? `<button class="btn sm danger" data-act="del-post" data-id="${p.id}">삭제</button>` : '';
+
+  return `
+  <article class="card ${open ? '' : 'closed'}">
+    <div class="tag"><span class="fid">${B.code} #${pad(p.id)}</span><span class="chip ${open ? 'open' : ''}">${open ? '모집중' : '마감'}</span></div>
+    <h3>${esc(p.title)}</h3>
+    ${kvs ? `<div class="kvs">${kvs}</div>` : ''}
+    ${p.body ? `<p class="body">${esc(p.body)}</p>` : ''}
+    <div class="by">${avatar(p.author)}<strong>${esc(nameOf(p.author))}</strong><span class="mono">· ${ago(p.created_at)}</span></div>
+    ${entries.length ? `<details class="ent"><summary>${B.entryLabel} ${entries.length}명</summary><ul>
+      ${entries.map(e => `<li><b>${esc(nameOf(e.user))}</b>${e.message ? ` <span>— ${esc(e.message)}</span>` : ''}
+        ${a.admin && e.user_id !== me.id ? ` <button class="btn sm ghost" data-act="leave" data-id="${e.id}" style="height:22px;padding:0 6px;font-size:11px">빼기</button>` : ''}</li>`).join('')}
+    </ul></details>` : ''}
+    ${(join || manage || del) ? `<div class="actions">${join}${manage}${del}</div>` : ''}
+  </article>`;
+}
+
+/* ---------- 로켓단 ---------- */
+async function viewRocket(){
+  const sub = S.rocketTab;
+  const seg = `<div class="seg">
+    <button data-act="rocket-tab" data-tab="have" class="${sub === 'have' ? 'on' : ''}">보유 포켓몬</button>
+    <button data-act="rocket-tab" data-tab="need" class="${sub === 'need' ? 'on' : ''}">구해요</button>
+    <button data-act="rocket-tab" data-tab="res" class="${sub === 'res' ? 'on' : ''}">예약 현황</button></div>`;
+  const head = `<div class="head"><div><div class="code">MEMBERS ONLY · 로켓단 전용</div><h1>로켓단 거래소</h1>
+    <p>단원끼리 포켓몬을 주고받아요. 예약하면 두 사람의 디스코드 DM으로 바로 전달돼요.</p></div></div>`;
+
+  if (sub === 'res') {
+    const list = await S.api.listReservations();
+    return `${head}<div class="toolbar">${seg}</div>
+      ${list.length ? `<div class="feed">${list.map(resRow).join('')}</div>` : '<div class="empty">아직 예약이 없어요.</div>'}`;
+  }
+  const list = await S.api.listListings(sub);
+  const addLabel = sub === 'have' ? '+ 보유 포켓몬 올리기' : '+ 필요한 포켓몬 올리기';
+  return `${head}<div class="toolbar">${seg}<button class="btn red" data-act="new-listing" data-kind="${sub}">${addLabel}</button></div>
+    ${list.length ? `<div class="grid">${list.map(listingCard).join('')}</div>`
+      : `<div class="empty">${sub === 'have' ? '아직 올라온 포켓몬이 없어요.' : '아직 구하는 포켓몬이 없어요.'}</div>`}`;
+}
+
+function listingCard(l){
+  const me = S.me, a = acc();
+  const mine = l.author_id === me.id, open = l.status === 'open';
+  const res = l.rocket_reservations || [];
+  const myRes = res.find(r => r.requester_id === me.id && r.status === 'pending');
+  const pending = res.filter(r => r.status === 'pending').length;
+  let act = '';
+  if (open && !mine) {
+    act = myRes ? `<button class="btn sm" disabled>예약함</button>`
+      : `<button class="btn sm red" data-act="reserve" data-id="${l.id}">${l.kind === 'have' ? '받을게요' : '줄게요'}</button>`;
+  }
+  const manage = (mine || a.admin)
+    ? `<button class="btn sm ghost" data-act="listing-status" data-id="${l.id}" data-status="${open ? 'done' : 'open'}">${open ? '거래 완료' : '다시 열기'}</button>
+       <button class="btn sm danger" data-act="del-listing" data-id="${l.id}">삭제</button>` : '';
+  return `
+  <article class="card ${open ? '' : 'closed'}" data-pokemon="${esc(l.pokemon)}" data-owner="${esc(nameOf(l.author))}" data-kind="${l.kind}">
+    <div class="tag"><span class="fid">${l.kind === 'have' ? 'HAVE' : 'NEED'} #${pad(l.id)}</span>
+      <span class="chip ${open ? 'open' : ''}">${open ? (l.kind === 'have' ? '드려요' : '구해요') : '완료'}</span></div>
+    <h3>${esc(l.pokemon)}</h3>
+    ${l.details ? `<p class="body">${esc(l.details)}</p>` : ''}
+    <div class="by">${avatar(l.author)}<strong>${esc(nameOf(l.author))}</strong><span class="mono">· ${ago(l.created_at)}</span>
+      ${mine && pending ? `<span class="chip red" style="margin-left:auto">예약 ${pending}건</span>` : ''}</div>
+    ${(act || manage) ? `<div class="actions">${act}${manage}</div>` : ''}
+  </article>`;
+}
+
+function resRow(r){
+  const me = S.me, a = acc();
+  const l = r.listing || {};
+  const iOwn = l.author_id === me.id, iAsked = r.requester_id === me.id;
+  const ownerGives = l.kind === 'have';
+  const iGive = (iOwn && ownerGives) || (iAsked && !ownerGives);
+  const other = iOwn ? r.requester : l.author;
+  const involved = iOwn || iAsked;
+  const dir = involved ? `<span class="dir ${iGive ? '' : 'in'}">${iGive ? '내가 줌' : '내가 받음'}</span>`
+                       : `<span class="dir">관리자 보기</span>`;
+  const st = { pending:'<span class="chip gold">대기</span>', done:'<span class="chip open">완료</span>', cancelled:'<span class="chip">취소</span>' }[r.status];
+  const ctl = r.status === 'pending' && (involved || a.admin)
+    ? `<button class="btn sm" data-act="res-status" data-id="${r.id}" data-status="done">완료</button>
+       <button class="btn sm danger" data-act="res-status" data-id="${r.id}" data-status="cancelled">취소</button>` : '';
+  const people = involved
+    ? `상대: <b>${esc(nameOf(other))}</b>`
+    : `<b>${esc(nameOf(ownerGives ? l.author : r.requester))}</b> → <b>${esc(nameOf(ownerGives ? r.requester : l.author))}</b>`;
+  return `<div class="panel res">
+    ${dir}
+    <div style="min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>${esc(l.pokemon || '삭제된 글')}</b>${st}<span class="mono muted" style="font-size:12px">#${pad(r.id)} · ${ago(r.created_at)}</span></div>
+      <div class="muted" style="font-size:14px;margin-top:4px">${people} · 전할 말: ${esc(r.message)}</div>
+    </div>
+    <div class="actions" style="margin:0;padding:0">${ctl}</div>
+  </div>`;
+}
+
+/* ---------- 관리자 ---------- */
+async function viewAdmin(){
+  const [profiles, fixed] = await Promise.all([S.api.listProfiles(), S.api.fixedAdmins()]);
+  const fixedSet = new Set(fixed.map(f => f.toLowerCase()));
+  const isFixed = (p) => p.mc_verified && fixedSet.has(String(p.mc_name || '').toLowerCase());
+  const waiting = profiles.filter(p => p.mc_name && !p.mc_verified);
+  const q = S.memberQuery.trim().toLowerCase();
+  const list = profiles.filter(p => !q || [p.mc_name, p.discord_name].some(s => String(s || '').toLowerCase().includes(q)));
+  const iAmFixed = acc().fixed;
+
+  const row = (p) => {
+    const fx = isFixed(p);
+    const status = p.mc_verified
+      ? `<span class="chip open">인증 · ${p.mc_verified_via === 'microsoft' ? 'MS' : '관리자'}</span>`
+      : p.mc_name ? '<span class="chip gold">인증 대기</span>' : '<span class="chip">미등록</span>';
+    const roleSel = fx ? '<span class="chip gold">고정 관리자</span>' :
+      `<select data-act="role" data-id="${p.id}" aria-label="권한">
+        ${['member','rocket','admin'].map(r => `<option value="${r}" ${p.role === r ? 'selected' : ''} ${r === 'admin' && !iAmFixed && p.role !== 'admin' ? 'disabled' : ''}>${ROLE_NAME[r]}</option>`).join('')}
+      </select>`;
+    const verifyBtn = fx || !p.mc_name ? '' : p.mc_verified
+      ? `<button class="btn sm ghost" data-act="verify" data-id="${p.id}" data-v="0">인증 해제</button>`
+      : `<button class="btn sm red" data-act="verify" data-id="${p.id}" data-v="1">인증</button>`;
+    return `<div class="mrow">
+      <div class="id">${avatar(p)}<div><b>${esc(p.discord_name || '(이름 없음)')}</b><small>가입 ${ago(p.created_at)}</small></div></div>
+      <div class="mc"><code>${esc(p.mc_name || '—')}</code>${status}</div>
+      <div class="ctl">${verifyBtn}${roleSel}</div>
+    </div>`;
+  };
+
+  return `
+  <div class="head"><div><div class="code">ADMIN · 관리자</div><h1>관리자 본부</h1>
+    <p>닉네임 인증, 로켓단·관리자 권한 부여를 여기서 해요. 글 삭제는 각 게시판의 삭제 버튼을 쓰세요.</p></div></div>
+
+  ${waiting.length ? `<h2 class="sec">WAITING · 인증 대기 ${waiting.length}명</h2><div class="members">${waiting.map(row).join('')}</div>` : ''}
+
+  <h2 class="sec">MEMBERS · 전체 회원 ${profiles.length}명</h2>
+  <div class="toolbar"><input class="input" style="max-width:320px" placeholder="닉네임 또는 디스코드 이름 검색" value="${esc(S.memberQuery)}" data-act="member-search"></div>
+  <div class="members" id="member-list">${list.map(row).join('') || '<div class="empty">검색 결과가 없어요.</div>'}</div>
+  ${iAmFixed ? '' : '<p class="muted" style="font-size:13px;margin-top:10px">관리자 권한을 주거나 빼는 건 고정 관리자만 할 수 있어요.</p>'}
+
+  <h2 class="sec">DISCORD · 알림 점검</h2>
+  <div class="panel"><h3>디스코드 봇 연결 테스트</h3>
+    <p>처음 한 번은 꼭 눌러주세요. 봇을 디스코드에 연결하고, 내 DM과 알림 채널로 테스트 메시지를 보내요.</p>
+    <button class="btn" data-act="bot-test">테스트 보내기</button></div>`;
+}
+
+/* ---------- 내 정보 ---------- */
+function viewMe(){
+  const me = S.me, a = acc();
+  const viaMs = a.verified && me.mc_verified_via === 'microsoft';
+
+  let msBlock;
+  if (viaMs) {
+    msBlock = `<div class="linked"><span class="chip open">연동 완료</span><b class="mono">${esc(me.mc_name)}</b></div>
+      <p>Microsoft 계정으로 확인된 자바 닉네임이에요. 마인크래프트에서 닉네임을 바꿨다면 다시 연동하면 갱신돼요.</p>
+      ${msReady() ? '<button class="btn sm" data-act="ms-link">다시 연동하기</button>' : ''}`;
+  } else if (a.verified) {
+    msBlock = `<div class="linked"><span class="chip open">관리자 인증</span><b class="mono">${esc(me.mc_name)}</b></div>
+      <p>관리자가 확인한 닉네임으로 활동 중이에요.${msReady() ? ' Microsoft로 연동하면 자동 확인으로 바뀌어요.' : ''}</p>
+      ${msReady() ? '<button class="btn sm red" data-act="ms-link">Microsoft로 연동하기</button>' : ''}`;
+  } else if (msReady()) {
+    msBlock = `<p>마인크래프트를 구매한 Microsoft 계정으로 로그인하면 자바 닉네임이 자동으로 등록되고 바로 활동할 수 있어요.</p>
+      <button class="btn red big" data-act="ms-link">Microsoft로 연동하기</button>`;
+  } else {
+    msBlock = `<p>Microsoft 연동은 준비 중이에요.${manualAllowed() ? ' 그동안은 아래에 닉네임을 등록하면 관리자가 확인 후 인증해 드려요.' : ''}</p>
+      <button class="btn big" disabled>Microsoft 연동 준비 중</button>`;
+  }
+
+  const showForm = manualAllowed() && !a.fixed;
+  const form = !showForm ? '' : `
+    <div class="panel" style="margin-top:14px"><h3>임시: 닉네임 직접 등록</h3>
+      <p>Microsoft 연동이 열리기 전까지만 쓰는 방법이에요. 등록하면 관리자에게 인증 요청이 가요.</p>
+      <form id="mcform">
+        <div class="field"><label for="mcname">마인크래프트 자바 닉네임</label>
+          <input id="mcname" name="mc_name" class="input mono" value="${esc(me.mc_name || '')}" maxlength="16" pattern="[A-Za-z0-9_]{1,16}"
+            placeholder="예: Steve_123" required autocomplete="off">
+          <span class="hint">닉네임을 바꾸면 인증이 다시 필요해요.</span></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn red" type="submit">등록</button>
+          ${a.verified ? '<span class="chip open">인증됨</span>' : me.mc_name ? '<span class="chip gold">관리자 인증 대기</span>' : ''}</div>
+      </form>
+    </div>`;
+
+  return `
+  <div class="head"><div><div class="code">PROFILE · 내 정보</div><h1>트레이너 카드</h1><p>디스코드 계정과 마인크래프트 계정을 연결해요.</p></div></div>
+  <div class="two">
+    <div class="panel"><h3>디스코드</h3>
+      <div class="linked">${avatar(me)}<b>${esc(me.discord_name || '디스코드 사용자')}</b><span class="chip open">연결됨</span></div>
+      <p>알림과 거래 예약 DM이 이 디스코드 계정으로 가요.</p>
+      <div class="linked"><span class="muted" style="font-size:13px">권한</span>
+        <span class="chip ${a.admin ? 'gold' : a.rocket ? 'red' : ''}">${a.fixed ? '고정 관리자' : ROLE_NAME[a.admin ? 'admin' : a.rocket ? 'rocket' : 'member']}</span></div>
+    </div>
+    <div class="panel"><h3>Microsoft (마인크래프트)</h3>${msBlock}</div>
+  </div>
+  ${form}`;
+}
+
+/* =====================================================================
+   동작
+   ===================================================================== */
+const ACTIONS = {
+  async login(){ await S.api.login(); if (S.api.demo) { location.hash = '#home'; refresh(); } },
+  async logout(){ await S.api.logout(); history.replaceState(null, '', location.pathname + location.search); refresh(); },
+  'close-modal'(){ closeModal(); },
+  'demo-role'(d){ S.api.setRole(d.role); refresh(); },
+  'demo-start'(){ S.api = makeDemoApi(); refresh(); },
+  'exit-demo'(){ location.href = location.pathname; },
+  'rocket-tab'(d){ S.rocketTab = d.tab; renderView(); },
+
+  write(d){
+    const B = BOARDS[d.board];
+    const extra = B.fields.map(f => `<div class="field"><label>${esc(f.label)}</label>
+      <input class="input" name="m_${f.k}" placeholder="${esc(f.ph)}" ${f.type === 'number' ? 'inputmode="numeric"' : ''} maxlength="60"></div>`).join('');
+    openForm({
+      title: d.board === 'notice' ? '공지 쓰기' : `${B.name} 글쓰기`,
+      sub: d.board === 'notice' ? '' : '올리면 디스코드 알림 채널에도 소식이 올라가요.',
+      html: `<div class="field"><label>제목</label><input class="input" name="title" maxlength="80" required></div>
+        ${extra}
+        <div class="field"><label>내용</label><textarea class="input" name="body" maxlength="2000" placeholder="자세한 내용 (선택)"></textarea></div>`,
+      submit: '올리기',
+      async onSubmit(f){
+        const meta = {};
+        B.fields.forEach(x => { const v = (f[`m_${x.k}`] || '').trim(); if (v) meta[x.k] = v; });
+        const post = await S.api.createPost({ board:d.board, title:f.title.trim(), body:(f.body || '').trim(), meta });
+        S.api.notify('post', post.id);
+        toast('글을 올렸어요.');
+        renderView();
+      },
+    });
+  },
+  join(d){
+    const id = Number(d.id);
+    const card = document.querySelector(`[data-act="join"][data-id="${id}"]`)?.closest('.card');
+    const board = location.hash.slice(1); const B = BOARDS[board];
+    openForm({
+      title: B.join,
+      sub: `<b>${esc(card?.querySelector('h3')?.textContent || '')}</b> 글쓴이에게 디스코드 DM으로 알려드려요.`,
+      html: `<div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" placeholder="${esc(B.msgPh)}"></textarea></div>`,
+      submit: B.join,
+      async onSubmit(f){
+        const e = await S.api.createEntry(id, (f.message || '').trim());
+        const n = await S.api.notify('entry', e.id);
+        toast(n.ok && n.dm?.author !== false ? '신청했어요. 글쓴이에게 알림을 보냈어요.' : '신청은 됐지만 디스코드 알림은 보내지 못했어요.', n.ok && n.dm?.author !== false ? '' : 'warn');
+        renderView();
+      },
+    });
+  },
+  async leave(d){
+    if (!await ask('신청 취소', '이 신청을 취소할까요?', '취소하기', true)) return;
+    await S.api.deleteEntry(Number(d.id)); toast('신청을 취소했어요.'); renderView();
+  },
+  async 'post-status'(d){
+    await S.api.setPostStatus(Number(d.id), d.status);
+    toast(d.status === 'closed' ? '마감했어요.' : '다시 열었어요.'); renderView();
+  },
+  async 'del-post'(d){
+    if (!await ask('글 삭제', '이 글과 신청 내역이 모두 삭제돼요. 되돌릴 수 없어요.', '삭제', true)) return;
+    await S.api.deletePost(Number(d.id)); toast('삭제했어요.'); renderView();
+  },
+
+  'new-listing'(d){
+    const have = d.kind === 'have';
+    openForm({
+      title: have ? '보유 포켓몬 올리기' : '필요한 포켓몬 올리기',
+      sub: have ? '단원들이 "받을게요"로 예약할 수 있어요.' : '단원들이 "줄게요"로 예약할 수 있어요.',
+      html: `<div class="field"><label>포켓몬</label><input class="input" name="pokemon" maxlength="40" required placeholder="예: 메타몽"></div>
+        <div class="field"><label>정보</label><textarea class="input" name="details" maxlength="500" placeholder="레벨, 성격, 특성, 개체값, 이로치 여부 등"></textarea></div>`,
+      submit: '올리기',
+      async onSubmit(f){
+        await S.api.createListing({ kind:d.kind, pokemon:f.pokemon.trim(), details:(f.details || '').trim() });
+        toast('올렸어요.'); renderView();
+      },
+    });
+  },
+  reserve(d){
+    const card = document.querySelector(`[data-act="reserve"][data-id="${d.id}"]`).closest('.card');
+    const have = card.dataset.kind === 'have';
+    openForm({
+      title: have ? '받을게요' : '줄게요',
+      sub: '확인을 누르면 두 분의 디스코드 DM으로 예약이 전송돼요.',
+      html: `<div class="summary"><b>${esc(card.dataset.pokemon)}</b> · ${have ? `${esc(card.dataset.owner)}님이 주고, 내가 받아요` : `내가 주고, ${esc(card.dataset.owner)}님이 받아요`}</div>
+        <div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" required placeholder="예: 저녁 8시에 접속 가능합니다"></textarea></div>`,
+      submit: '확인',
+      async onSubmit(f){
+        const r = await S.api.createReservation(Number(d.id), f.message.trim());
+        const n = await S.api.notify('reservation', r.id);
+        if (!n.ok) toast(`예약은 저장됐지만 디스코드 알림을 보내지 못했어요. (${n.error || '알 수 없는 오류'})`, 'warn');
+        else if (n.dm && (!n.dm.owner || !n.dm.requester)) {
+          const miss = [!n.dm.owner && card.dataset.owner, !n.dm.requester && '나'].filter(Boolean).join(', ');
+          toast(`예약됐어요. 다만 ${miss}에게는 DM을 못 보냈어요. (디스코드 서버 미가입 또는 DM 차단)`, 'warn');
+        } else toast('예약됐어요! 두 분의 디스코드로 알림을 보냈어요.');
+        renderView();
+      },
+    });
+  },
+  async 'listing-status'(d){
+    await S.api.setListingStatus(Number(d.id), d.status);
+    toast(d.status === 'done' ? '거래 완료로 표시했어요.' : '다시 열었어요.'); renderView();
+  },
+  async 'del-listing'(d){
+    if (!await ask('삭제', '이 글과 예약이 모두 삭제돼요.', '삭제', true)) return;
+    await S.api.deleteListing(Number(d.id)); toast('삭제했어요.'); renderView();
+  },
+  async 'res-status'(d){
+    if (d.status === 'cancelled' && !await ask('예약 취소', '이 예약을 취소할까요?', '예약 취소', true)) return;
+    await S.api.setReservationStatus(Number(d.id), d.status);
+    toast(d.status === 'done' ? '완료했어요.' : '취소했어요.'); renderView();
+  },
+
+  async verify(d){
+    try { await S.api.updateProfile(d.id, { mc_verified: d.v === '1' }); toast(d.v === '1' ? '인증했어요.' : '인증을 해제했어요.'); }
+    catch (e) { toast(e.message, 'err'); }
+    renderView();
+  },
+  async 'bot-test'(d, el){
+    el.disabled = true;
+    const n = await S.api.notify('bot-test');
+    el.disabled = false;
+    if (!n.ok) return toast(`실패: ${n.error}`, 'err');
+    if (n.demo) return toast('데모 모드라 실제로 보내지 않았어요.', 'warn');
+    toast(`봇 연결: ${n.gateway} · 내 DM: ${n.dm ? '성공' : '실패'} · 알림 채널: ${n.channel ? '성공' : '실패/미설정'}`, n.dm ? '' : 'warn');
+  },
+  async 'ms-link'(d, el){
+    el.disabled = true;
+    try { await S.api.msStart(); if (S.api.demo) await refresh(); }
+    catch (e) { toast(e.message, 'err'); el.disabled = false; }
+  },
+};
+
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'SELECT' || el.tagName === 'INPUT') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (!fn) return;
   e.preventDefault();
-  const tags=[...form.querySelectorAll('.checks input:checked')].map(c=>c.value);
-  reqs.unshift({id:nextId++,poke:document.getElementById('fPoke').value.trim(),tags,nature:document.getElementById('fNature').value.trim(),
-    reward:document.getElementById('fReward').value.trim(),by:me,ago:'방금',status:'open',note:document.getElementById('fNote').value.trim()});
-  form.reset();sheet.hidden=true;filter='all';tab='req';render();toast('의뢰를 올렸어요');
+  try { await fn(el.dataset, el); } catch (err) { toast(err.message || String(err), 'err'); }
 });
+document.addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset?.act !== 'role') return;
+  try { await S.api.updateProfile(el.dataset.id, { role: el.value }); toast(`권한을 ${ROLE_NAME[el.value]}(으)로 바꿨어요.`); }
+  catch (err) { toast(err.message, 'err'); }
+  renderView();
+});
+let searchTimer;
+document.addEventListener('input', (e) => {
+  if (e.target.dataset?.act !== 'member-search') return;
+  S.memberQuery = e.target.value;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => {
+    const pos = e.target.selectionStart;
+    await renderView();
+    const box = document.querySelector('[data-act="member-search"]');
+    if (box) { box.focus(); box.setSelectionRange(pos, pos); }
+  }, 250);
+});
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'mcform') return;
+  e.preventDefault();
+  const name = new FormData(e.target).get('mc_name').trim();
+  if (!/^[A-Za-z0-9_]{1,16}$/.test(name)) return toast('닉네임은 영문, 숫자, _ 만 쓸 수 있어요 (최대 16자).', 'err');
+  if (name === S.me.mc_name) return toast('이미 저장된 닉네임이에요.', 'warn');
+  try {
+    await S.api.setMcName(S.me.id, name);
+    S.api.notify('verify-request');
+    toast('저장했어요. 관리자가 확인하면 인증돼요.');
+    await refresh();
+  } catch (err) { toast(err.message, 'err'); }
+});
+window.addEventListener('hashchange', () => { renderShell(); renderView(); });
 
-renderLogin();render();
+/* ---------- 시작 ---------- */
+(async function boot(){
+  if (DEMO) S.api = makeDemoApi();
+  else if (typeof supabase === 'undefined') {
+    S.api = makeDemoApi();
+    toast('로그인 서버(Supabase)를 불러오지 못해 데모로 열었어요. 새로고침해 보세요.', 'err');
+  } else S.api = makeSupaApi();
+  const q = new URLSearchParams(location.search);
+  if (q.get('mc') === 'ok') toast(`마인크래프트 닉네임 ${q.get('name') || ''} 인증 완료!`);
+  else if (q.get('mc') === 'err') toast(MC_ERRORS[q.get('reason')] || 'Microsoft 연동에 실패했어요.', 'err');
+  if (q.has('mc')) history.replaceState(null, '', location.pathname + location.hash);
+  S.api.onAuth(() => refresh());
+  await refresh();
+})();
 </script>
-
 </body>
 </html>

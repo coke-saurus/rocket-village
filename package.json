@@ -1,0 +1,6 @@
+{
+  "name": "rocket-village",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" }
+}
