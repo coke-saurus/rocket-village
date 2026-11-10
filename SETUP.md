@@ -66,13 +66,7 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 
 `index.html`의 `CONFIG`에 프로젝트 URL과 publishable 키가 이미 들어가 있습니다. 이 두 값은 원래 공개되는 값이라 GitHub에 올려도 괜찮고, 실제 보안은 schema.sql의 권한 규칙이 담당합니다.
 
-| 설정 | 의미 |
-|---|---|
-| `MS_LINK_ENABLED` | Mojang 승인 후 `true`로 바꾸면 "Microsoft로 연동하기" 버튼이 켜짐 |
-| `ALLOW_ADMIN_VERIFY` | `true`(기본): 승인 전까지 "닉네임 직접 등록 → 관리자 인증"으로 임시 활동 허용. `false`: Microsoft 연동만 허용 |
-| `SHOW_DEMO_LINK` | 첫 화면에 "데모로 둘러보기" 버튼 표시 |
-
-데모는 언제든 `https://team-rocket-underworld.vercel.app/?demo`로 열 수 있습니다.
+첫 화면의 데모 버튼은 없앴지만, 개발·확인용 데모는 주소 뒤에 `?demo`를 붙이면 열립니다 (`https://team-rocket-underworld.vercel.app/?demo`). 가짜 데이터라 실제 DB에는 아무 영향이 없습니다.
 
 ## 4. Vercel 환경변수
 
@@ -112,20 +106,18 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 - 다른 관리자는 고정 관리자의 인증을 해제할 수 없습니다.
 - 고정 관리자를 바꾸거나 추가하려면 Supabase의 `fixed_admins` 테이블을 수정하세요.
 
-## 6. (나중에) Microsoft로 닉네임 자동 인증
+## 6. Microsoft로 닉네임 자동 인증 (완료 · 2026-11 Mojang 승인)
 
 1. [Azure Portal](https://portal.azure.com) → **App registrations → New registration**
    - 이름: 아무거나. 단, Minecraft, Mojang, Microsoft 같은 단어는 빼야 합니다.
    - 지원 계정 유형: **Personal Microsoft accounts only**
    - Redirect URI: 플랫폼 **Web**, `https://team-rocket-underworld.vercel.app/api/ms-callback`
 2. **Certificates & secrets → New client secret**으로 비밀값을 만들어 복사합니다.
-3. [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid)에 Application (client) ID와 Directory (tenant) ID를 제출해 Mojang 승인을 신청합니다. 승인 전에는 "아직 승인이 나지 않았다"는 안내가 뜹니다.
-   - 승인 전에도 **관리자**는 내 정보 → "Microsoft 연동 테스트"로 설정을 시험할 수 있습니다. "아직 Mojang 승인이 나지 않아…"가 뜨면 승인 외 설정은 정상입니다.
+3. [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid)에 Application (client) ID와 Directory (tenant) ID를 제출해 Mojang 승인을 신청합니다.
    - 고정 관리자는 등록된 닉네임(`debug_stick`)과 같은 마인크래프트 계정으로만 연동됩니다. 다른 계정으로 로그인하면 거부되어 관리자 권한이 유지됩니다.
 4. Vercel 환경변수에 `MS_CLIENT_ID`, `MS_CLIENT_SECRET`을 추가하고 Redeploy합니다.
-5. 승인이 나면 `index.html`의 `MS_LINK_ENABLED`를 `true`로 바꿉니다.
 
-승인 후에는 회원이 **내 정보 → Microsoft로 닉네임 자동 인증**을 누르기만 하면 됩니다. 실제 자바 닉네임이 등록되고 바로 인증됩니다. 같은 닉네임을 다른 계정이 관리자 인증으로 갖고 있었다면, 진짜 주인에게 넘어갑니다.
+회원은 로그인 후 안내 화면이나 **내 정보**에서 **Microsoft로 연동하기**를 누르기만 하면 됩니다. 실제 자바 닉네임이 등록되고 바로 인증됩니다. 같은 닉네임을 다른 계정이 관리자 인증으로 갖고 있었다면, 진짜 주인에게 넘어갑니다.
 
 ---
 
@@ -145,3 +137,7 @@ DM을 못 받은 사람이 있으면 사이트에 경고가 뜹니다. 대부분
 - **"프로필이 없어요"**: schema.sql을 실행하기 전에 가입한 계정입니다. Supabase → Authentication → Users에서 그 사용자를 지우고 다시 로그인하세요.
 - **로그인 후 첫 화면으로 돌아옴**: Supabase URL Configuration의 Redirect URLs를 확인하세요.
 - **알림이 안 옴**: Vercel → 프로젝트 → **Logs**에서 `/api/notify` 오류를 확인하세요. 환경변수를 바꾼 뒤 Redeploy를 했는지도 확인하세요.
+
+## 정기 관리
+
+- **Azure 클라이언트 암호**는 최대 24개월 뒤 만료됩니다. 만료 전에 Azure → 앱 등록 → 인증서 및 비밀에서 새 암호를 만들고 Vercel의 `MS_CLIENT_SECRET`을 바꾼 뒤 Redeploy하세요. 만료되면 Microsoft 연동이 멈춥니다.
