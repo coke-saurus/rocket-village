@@ -295,6 +295,85 @@ textarea.input{min-height:90px;resize:vertical}
 .chip.time{color:#c9c7d3}
 .loading{padding:60px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;letter-spacing:.1em}
 
+
+/* ====================== 배경 시안 (미리보기 전용) ====================== */
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bgfx>div{position:absolute;inset:0}
+body[data-bg]::before{display:none}
+
+/* A. 지하 아지트: 철판·리벳, 위에서 비추는 붉은 비상등, 경고 줄무늬 */
+body[data-bg=a]{background:#0c0c0f}
+.bg-a .plates{background:
+  radial-gradient(circle at 9px 9px, rgba(255,255,255,.09) 1.5px, rgba(0,0,0,.6) 2.4px, transparent 3px) 0 0/180px 130px,
+  radial-gradient(circle at 171px 9px, rgba(255,255,255,.09) 1.5px, rgba(0,0,0,.6) 2.4px, transparent 3px) 0 0/180px 130px,
+  radial-gradient(circle at 9px 121px, rgba(255,255,255,.09) 1.5px, rgba(0,0,0,.6) 2.4px, transparent 3px) 0 0/180px 130px,
+  radial-gradient(circle at 171px 121px, rgba(255,255,255,.09) 1.5px, rgba(0,0,0,.6) 2.4px, transparent 3px) 0 0/180px 130px,
+  linear-gradient(90deg, rgba(0,0,0,.7) 0 2px, rgba(255,255,255,.035) 2px 3px, transparent 3px) 0 0/180px 130px,
+  linear-gradient(rgba(0,0,0,.7) 0 2px, rgba(255,255,255,.03) 2px 3px, transparent 3px) 0 0/180px 130px,
+  repeating-linear-gradient(100deg, rgba(255,255,255,.014) 0 1px, transparent 1px 4px),
+  linear-gradient(180deg, #19191e 0%, #111115 60%, #0b0b0e 100%)}
+.bg-a .light{background:radial-gradient(75% 55% at 50% -12%, rgba(255,40,48,.42), rgba(224,40,47,.12) 45%, transparent 72%);animation:bgAlarm 4.5s ease-in-out infinite}
+.bg-a .beam{left:50%;top:-30vh;width:160vmax;height:160vmax;margin-left:-80vmax;inset:auto auto auto 50%;
+  background:conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(255,50,56,.10) 12deg, transparent 24deg, transparent 336deg, rgba(255,50,56,.10) 348deg, transparent 360deg);
+  transform-origin:50% 0;animation:bgSweep 9s ease-in-out infinite alternate}
+.bg-a .vig{background:radial-gradient(130% 95% at 50% 25%, transparent 50%, rgba(0,0,0,.78))}
+.bg-a .stripe{top:auto;bottom:0;height:12px;opacity:.55;background:repeating-linear-gradient(-45deg, rgba(242,193,78,.55) 0 14px, #120d05 14px 28px)}
+@keyframes bgAlarm{0%,100%{opacity:.72}50%{opacity:1}}
+@keyframes bgSweep{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+
+/* B. 레이더 관제실: 육각형 격자, 회전하는 레이더, 깜빡이는 점 */
+body[data-bg=b]{background:radial-gradient(120% 80% at 70% 20%, #120a0c 0%, #08090b 60%)}
+.bg-b .hex{background:url(assets/bg/hex.svg) 0 0/56px 100px;
+  -webkit-mask-image:radial-gradient(90% 75% at 72% 22%, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%);
+          mask-image:radial-gradient(90% 75% at 72% 22%, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%)}
+.bg-b .radar{inset:auto;width:110vmax;height:110vmax;left:72%;top:22%;margin:-55vmax 0 0 -55vmax;border-radius:50%;
+  background:
+    repeating-radial-gradient(circle, transparent 0 calc(8.33% - 1px), rgba(224,40,47,.13) calc(8.33% - 1px) 8.33%),
+    linear-gradient(rgba(224,40,47,.10), rgba(224,40,47,.10)) 50% 0/1px 100% no-repeat,
+    linear-gradient(rgba(224,40,47,.10), rgba(224,40,47,.10)) 0 50%/100% 1px no-repeat;
+  -webkit-mask-image:radial-gradient(circle, #000 40%, transparent 70%);mask-image:radial-gradient(circle, #000 40%, transparent 70%)}
+.bg-b .sweep{inset:auto;width:110vmax;height:110vmax;left:72%;top:22%;margin:-55vmax 0 0 -55vmax;border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(255,60,66,.30) 0deg, rgba(224,40,47,.10) 25deg, transparent 70deg, transparent 360deg);
+  -webkit-mask-image:radial-gradient(circle, #000 35%, transparent 70%);mask-image:radial-gradient(circle, #000 35%, transparent 70%);
+  animation:bgSpin 10s linear infinite}
+.bg-b .blips{background:
+  radial-gradient(circle at 63% 31%, rgba(255,90,95,.9) 0 2.5px, rgba(255,60,66,.25) 3px 9px, transparent 10px),
+  radial-gradient(circle at 81% 14%, rgba(255,90,95,.9) 0 2px, rgba(255,60,66,.25) 3px 8px, transparent 9px),
+  radial-gradient(circle at 55% 52%, rgba(255,90,95,.8) 0 2px, rgba(255,60,66,.22) 3px 8px, transparent 9px),
+  radial-gradient(circle at 88% 40%, rgba(242,193,78,.85) 0 2px, rgba(242,193,78,.2) 3px 8px, transparent 9px);
+  animation:bgBlink 2.6s ease-in-out infinite}
+.bg-b .vig{background:radial-gradient(140% 100% at 60% 30%, transparent 45%, rgba(0,0,0,.8))}
+@keyframes bgSpin{to{transform:rotate(360deg)}}
+@keyframes bgBlink{0%,100%{opacity:.25}45%{opacity:1}}
+
+/* C. 네온 뒷골목: 밤 도시 실루엣, 붉은 네온 안개, 빗줄기 */
+body[data-bg=c]{background:linear-gradient(180deg, #060609 0%, #0b0910 50%, #1b0a10 100%)}
+.bg-c .glow{background:
+  radial-gradient(45% 30% at 16% 74%, rgba(255,40,90,.36), transparent 70%),
+  radial-gradient(42% 28% at 84% 70%, rgba(224,40,47,.40), transparent 70%),
+  radial-gradient(60% 22% at 50% 82%, rgba(255,110,60,.16), transparent 70%),
+  linear-gradient(transparent 55%, rgba(120,20,40,.18));
+  animation:bgFog 11s ease-in-out infinite alternate}
+.bg-c .far{top:auto;bottom:0;height:min(48vh,420px);background:url(assets/bg/city-far.svg) repeat-x 0 100%/auto 100%;opacity:.9}
+.bg-c .near{top:auto;bottom:0;height:min(34vh,300px);background:url(assets/bg/city-near.svg) repeat-x 140px 100%/auto 100%}
+.bg-c .rain{inset:-120px 0 0 0;
+  background:repeating-linear-gradient(104deg, transparent 0 22px, rgba(200,210,255,.06) 22px 23px, transparent 23px 47px, rgba(200,210,255,.035) 47px 48px);
+  -webkit-mask-image:linear-gradient(transparent, #000 25%, #000 75%, transparent);mask-image:linear-gradient(transparent, #000 25%, #000 75%, transparent);
+  animation:bgRain .9s linear infinite}
+.bg-c .vig{background:radial-gradient(130% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.7))}
+@keyframes bgFog{from{transform:translateX(-3%) scale(1)}to{transform:translateX(3%) scale(1.06)}}
+@keyframes bgRain{from{transform:translate(0,0)}to{transform:translate(-26px,120px)}}
+
+@media (prefers-reduced-motion: reduce){.bgfx div{animation:none!important}}
+
+/* 시안 전환 버튼 */
+.bgpick{position:fixed;left:12px;bottom:12px;z-index:45;display:flex;align-items:center;gap:4px;padding:5px;border-radius:12px;
+  background:rgba(18,18,24,.92);border:1px solid var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.5);backdrop-filter:blur(8px);font-size:13px;max-width:calc(100vw - 24px);flex-wrap:wrap}
+.bgpick b{font:700 11px var(--mono);letter-spacing:.12em;color:var(--gold);padding:0 6px}
+.bgpick button{border:1px solid transparent;background:none;color:var(--muted);padding:5px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+.bgpick button.on{background:var(--red);color:#fff}
+.bgpick button:hover:not(.on){color:var(--text);border-color:var(--line2)}
+
 @media (max-width:760px){
   .hero,.two{grid-template-columns:1fr}
   .hero h1{font-size:32px}
@@ -317,6 +396,7 @@ textarea.input{min-height:90px;resize:vertical}
 </style>
 </head>
 <body>
+<div class="bgfx" id="bgfx" aria-hidden="true"></div>
 <div id="demo" class="demo" hidden></div>
 <header class="top">
   <div class="wrap">
@@ -1636,7 +1716,39 @@ document.addEventListener('submit', async (e) => {
 window.addEventListener('hashchange', () => { renderShell(); renderView(); });
 
 /* ---------- 시작 ---------- */
+
+/* ---------- 배경 시안 (미리보기 전용) ---------- */
+const BG_SETS = {
+  '':  { name:'현재' , layers:[] },
+  a:   { name:'A 아지트', layers:['plates','beam','light','vig','stripe'] },
+  b:   { name:'B 레이더', layers:['hex','radar','sweep','blips','vig'] },
+  c:   { name:'C 뒷골목', layers:['glow','far','rain','near','vig'] },
+};
+function setBg(k){
+  if (!(k in BG_SETS)) k = '';
+  const box = $('#bgfx');
+  box.className = `bgfx ${k ? 'bg-' + k : ''}`;
+  box.innerHTML = BG_SETS[k].layers.map(c => `<div class="${c}"></div>`).join('');
+  if (k) document.body.dataset.bg = k; else delete document.body.dataset.bg;
+  document.querySelectorAll('.bgpick button').forEach(b => b.classList.toggle('on', b.dataset.bg === k));
+  try { localStorage.setItem('bgPreview', k); } catch {}
+  const u = new URL(location.href);
+  if (k) u.searchParams.set('bg', k); else u.searchParams.delete('bg');
+  history.replaceState(null, '', u);
+}
+function initBgPicker(){
+  const bar = document.createElement('div');
+  bar.className = 'bgpick';
+  bar.innerHTML = '<b>배경 시안</b>' + Object.entries(BG_SETS).map(([k, v]) => `<button type="button" data-bg="${k}">${v.name}</button>`).join('');
+  bar.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setBg(b.dataset.bg); });
+  document.body.append(bar);
+  let k = new URLSearchParams(location.search).get('bg');
+  if (k == null) { try { k = localStorage.getItem('bgPreview') || 'a'; } catch { k = 'a'; } }
+  setBg(k);
+}
+
 (async function boot(){
+  initBgPicker();
   if (DEMO) S.api = makeDemoApi();
   else if (typeof supabase === 'undefined') {
     S.api = makeDemoApi();
