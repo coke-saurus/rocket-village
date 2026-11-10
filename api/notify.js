@@ -27,14 +27,17 @@ function pkFields(pk) {
     { name: '특성', value: pk.ability ? `${pk.ability.n}${pk.ability.hidden ? ' (숨겨진 특성)' : ''}` : '상관없음', inline: true },
     { name: '성격', value: pk.nature?.n || '상관없음', inline: true },
     { name: '개체값', value: clip(iv, 1000) },
+    ...(pk.level !== undefined ? [{ name: '최대 레벨', value: pk.level ? `Lv.${pk.level}` : '상관없음', inline: true }] : []),
   ];
 }
-function rewardText(r) {
+function rewardText(r, pk) {
   if (!r) return null;
-  const parts = [`${won(r.gold)} 골드`];
-  if (r.less) parts.push(`1 부족당 -${won(r.less)}`);
-  if (r.more) parts.push(`1 초과당 +${won(r.more)}`);
-  return parts.join(' · ') + (r.other ? `\n+ ${r.other}` : '');
+  const lines = [`${won(r.gold)} 골드`];
+  const iv = [r.strict ? '타협 불가' : r.less ? `1 부족당 -${won(r.less)} 골드` : '', r.more ? `1 초과당 +${won(r.more)} 골드` : ''].filter(Boolean);
+  if (iv.length) lines.push(`요구 개체값: ${iv.join(' · ')}`);
+  if (pk?.level && (r.lvStrict || r.lvLess)) lines.push(`레벨(최대 Lv.${pk.level}): ${r.lvStrict ? '타협 불가' : `1 부족당 -${won(r.lvLess)} 골드`}`);
+  if (r.other) lines.push(`+ ${r.other}`);
+  return lines.join('\n');
 }
 const ts = (iso) => `<t:${Math.floor(new Date(iso).getTime() / 1000)}:f> (<t:${Math.floor(new Date(iso).getTime() / 1000)}:R>)`;
 
@@ -77,7 +80,7 @@ async function onPost(user, id) {
   const meta = post.meta || {};
   const fields = [
     ...pkFields(meta.pk),
-    ...(meta.reward ? [{ name: '보수', value: clip(rewardText(meta.reward), 1000) }] : []),
+    ...(meta.reward ? [{ name: '보수', value: clip(rewardText(meta.reward, meta.pk), 1000) }] : []),
     ...Object.entries(meta)
       .filter(([, v]) => v !== '' && v != null && typeof v !== 'object')
       .map(([k, v]) => ({ name: META_LABEL[k] || k, value: clip(v, 1000), inline: true })),

@@ -262,7 +262,8 @@ textarea.input{min-height:90px;resize:vertical}
 .hx-lb.up{fill:#ff5a5f}.hx-lb.dn{fill:#5b8cff}
 .gold-icon{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;flex:none}
 .gold-in{display:flex;align-items:center;gap:8px}
-.gold-in .input{max-width:170px;font-family:var(--mono)}
+.gold-in .input{max-width:150px;min-width:72px;font-family:var(--mono)}
+.gold-in .muted{white-space:nowrap;font-size:13px}
 .gold-in .sign{font:700 15px var(--mono);color:var(--muted);width:12px;text-align:center}
 .pkv{display:grid;grid-template-columns:auto minmax(0,1fr) 92px;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px 10px 6px 4px}
 .pkv .ic{width:72px;height:72px}
@@ -277,7 +278,16 @@ textarea.input{min-height:90px;resize:vertical}
 .hexmini svg{display:block;width:100%;height:auto}
 .reward{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:14px;background:var(--goldbg);border:1px solid rgba(242,193,78,.25);border-radius:9px;padding:8px 10px}
 .reward .g{display:inline-flex;align-items:center;gap:6px;font:700 16px var(--mono);color:var(--gold)}
-.reward .adj{font:500 12px var(--mono);color:#d8c9a0}
+.reward .line{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font:600 12.5px var(--mono);color:#efe3bf}
+.reward .line em{font:500 12px 'Pretendard Variable',sans-serif;font-style:normal;color:#b9ab84;margin-right:4px}
+.reward .line i{font-style:normal;color:#8d8366}
+.reward .line .gold-icon{width:14px;height:14px;vertical-align:-2px;margin:0 2px}
+.reward .strict{color:#ff5a5f;font:700 12.5px 'Pretendard Variable',sans-serif}
+.lv-row{display:flex;align-items:center;gap:8px}
+.lv-row .input{max-width:90px;font-family:var(--mono)}
+.lv-row .input:disabled{opacity:.35}
+.gold-in .input:disabled{opacity:.35}
+.gold-in .check{margin-left:6px;font-size:13px;white-space:nowrap}
 .reward .other{flex-basis:100%;font-size:13px}
 .reward .other b{color:var(--gold)}
 .chip.time{color:#c9c7d3}
@@ -494,7 +504,7 @@ function hexSvg(ivs, nature, { labels=true } = {}){
 }
 
 /* 포켓몬 입력 폼 (allowAny: 상관없음 허용) */
-function pkEditorHtml(allowAny){
+function pkEditorHtml(allowAny, withLevel=false){
   const ivRows = STAT_ROWS.map(x => `
     <div class="iv-row" data-stat="${x.k}">
       <span class="lb">${x.n}</span>
@@ -527,6 +537,10 @@ function pkEditorHtml(allowAny){
       <div class="btns"><button type="button" class="btn sm ghost" data-act="iv-all" data-v="31">전부 31</button>
         ${allowAny ? '<button type="button" class="btn sm ghost" data-act="iv-all" data-v="any">전부 상관없음</button>' : '<button type="button" class="btn sm ghost" data-act="iv-all" data-v="0">전부 0</button>'}</div></div>
     <div class="ivbox"><div class="ivs">${ivRows}</div><div class="hexbox" id="pk-hex"></div></div>
+    ${withLevel ? `<div class="field"><label for="pk-lv">최대 레벨</label>
+      <div class="lv-row"><span class="mono muted">Lv.</span><input type="number" min="1" max="100" step="1" value="50" class="input" id="pk-lv" inputmode="numeric" disabled>
+        <label class="check"><input type="checkbox" id="pk-lv-any" checked> 상관없음</label></div>
+      <span class="hint">이 레벨보다 높은 포켓몬은 받지 않아요.</span></div>` : ''}
   </div>`;
 }
 
@@ -574,6 +588,11 @@ function bindPkEditor(allowAny){
     drawPkHex();
   });
   root.querySelectorAll('[data-ivany]').forEach(c => c.closest('.iv-row').classList.toggle('any', c.checked));
+  $('#pk-lv-any')?.addEventListener('change', (e) => {
+    $('#pk-lv').disabled = e.target.checked;
+    if (!e.target.checked) $('#pk-lv').focus();
+    root.dispatchEvent(new CustomEvent('lvchange'));
+  });
   drawPkHex();
 }
 function ivUntick(k){
@@ -620,10 +639,18 @@ function readPk(){
   if (!PK.allowAny && !a) throw new Error('특성을 골라 주세요.');
   const nature = readNature();
   if (!PK.allowAny && !nature) throw new Error('성격을 골라 주세요.');
+  let level;
+  if ($('#pk-lv')) {
+    if ($('#pk-lv-any').checked) level = null;
+    else {
+      level = Number($('#pk-lv').value);
+      if (!Number.isInteger(level) || level < 1 || level > 100) throw new Error('최대 레벨은 1~100 사이로 적어 주세요.');
+    }
+  }
   return {
     id:x[0], name:x[1], shiny, icon:spriteUrl(x[0], shiny, x[5]),
     ability: a ? { n:DEX.abilities[a], hidden:Number(a) === x[4] } : null,
-    nature, ivs:readIvs(),
+    nature, ivs:readIvs(), ...(level !== undefined ? { level } : {}),
   };
 }
 
@@ -640,15 +667,23 @@ function pkView(pk){
     <ul>
       <li><span>특성</span>${pk.ability ? `${esc(pk.ability.n)}${pk.ability.hidden ? ' <span class="chip">숨특</span>' : ''}` : '상관없음'}</li>
       <li><span>성격</span>${nat ? esc(nat.n) : '상관없음'}</li>
+      ${pk.level !== undefined ? `<li><span>레벨</span>${pk.level ? `최대 Lv.${pk.level}` : '상관없음'}</li>` : ''}
     </ul>
     <div class="hexmini">${hexSvg(pk.ivs, nat, { labels:false })}</div>
     <div class="ivg">${ivl}</div>
   </div>`;
 }
-function rewardView(r){
+function rewardView(r, pk){
   if (!r) return '';
-  const adj = [r.less ? `1 부족당 −${won(r.less)}` : '', r.more ? `1 초과당 +${won(r.more)}` : ''].filter(Boolean).join(' · ');
-  return `<div class="reward"><span class="g">${GOLD}${won(r.gold)}</span>${adj ? `<span class="adj">${adj}</span>` : ''}
+  const coin = (sign, n) => `${sign}${GOLD}${won(n)}`;
+  const strict = '<b class="strict">타협 불가</b>';
+  const hasIv = !pk || STATS.some(x => pk.ivs?.[x.k] != null);
+  const ivParts = [r.strict ? strict : r.less ? `1 부족당 ${coin('−', r.less)}` : '', r.more ? `1 초과당 ${coin('+', r.more)}` : ''].filter(Boolean);
+  const lvParts = pk?.level ? [r.lvStrict ? strict : r.lvLess ? `1 부족당 ${coin('−', r.lvLess)}` : ''].filter(Boolean) : [];
+  const line = (label, parts) => parts.length ? `<span class="line"><em>${label}</em>${parts.join('<i>·</i>')}</span>` : '';
+  return `<div class="reward"><span class="g">${GOLD}${won(r.gold)}</span>
+    ${hasIv ? line('요구 개체값', ivParts) : ''}
+    ${line(`레벨 (최대 Lv.${pk?.level})`, lvParts)}
     ${r.other ? `<span class="other"><b>+</b> ${esc(r.other)}</span>` : ''}</div>`;
 }
 
@@ -789,11 +824,11 @@ function makeDemoApi(){
     posts:[
       { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
       { id:2, board:'request', title:'✨ 이브이', body:'마을 창고 앞에서 거래해요.', status:'open', author_id:'u4', created_at:t(5), closes_at:after(6*24 + 19),
-        meta:{ pk:demoPk(133, '이브이', true, { n:'적응력', hidden:false }, { k:'timid', n:'겁쟁이', up:'spe', dn:'atk' }, { hp:31, atk:null, def:31, spe:31, spd:31, spa:31 }),
-               reward:{ gold:5000, less:100, more:50, other:'' } } },
+        meta:{ pk:{ ...demoPk(133, '이브이', true, { n:'적응력', hidden:false }, { k:'timid', n:'겁쟁이', up:'spe', dn:'atk' }, { hp:31, atk:null, def:31, spe:31, spd:31, spa:31 }), level:50 },
+               reward:{ gold:5000, less:100, strict:false, more:50, lvLess:20, lvStrict:false, other:'' } } },
       { id:3, board:'request', title:'다투곰 (붉은 달)', body:'', status:'closed', author_id:'u3', created_at:t(52), closes_at:after(-20),
         meta:{ pk:demoPk(10272, '다투곰 (붉은 달)', false, { n:'심안', hidden:false }, null, { hp:31, atk:null, def:null, spe:null, spd:null, spa:31 }),
-               reward:{ gold:20000, less:0, more:0, other:'마스터볼 1개' } } },
+               reward:{ gold:20000, less:0, strict:true, more:0, lvLess:0, lvStrict:false, other:'마스터볼 1개' } } },
       { id:4, board:'pvp', title:'제1회 로켓단 컵 (싱글 배틀)', body:'우승자에게 마스터볼 1개!', meta:{ when:'11/8(토) 저녁 9시', rules:'싱글 6:6 · Lv.50 고정', capacity:'8' }, status:'open', author_id:'u1', created_at:t(12), closes_at:after(50) },
       { id:5, board:'auction', title:'이로치 리자몽 경매 예고', body:'마을 광장에서 진행합니다.', meta:{ item:'이로치 리자몽 Lv.60', when:'11/2(일) 오후 3시', start:'10,000' }, status:'open', author_id:'u2', created_at:t(20), closes_at:after(20) },
     ],
@@ -807,7 +842,7 @@ function makeDemoApi(){
         meta:{ pk:demoPk(132, '메타몽', false, { n:'괴짜', hidden:true }, { k:'hardy', n:'노력', up:null, dn:null }, { hp:31, atk:31, def:31, spe:31, spd:31, spa:0 }) } },
       { id:2, kind:'have', pokemon:'두랄루돈', details:'Lv.45 · 성격 고집', status:'open', author_id:'u2', created_at:t(26) },
       { id:3, kind:'need', pokemon:'✨ 저리더프', details:'진화용 · 레벨 무관', status:'open', author_id:'u2', created_at:t(2),
-        meta:{ pk:demoPk(848, '저리더프', true, null, null, { hp:null, atk:null, def:null, spe:31, spd:null, spa:null }) } },
+        meta:{ pk:{ ...demoPk(848, '저리더프', true, null, null, { hp:null, atk:null, def:null, spe:31, spd:null, spa:null }), level:30 } } },
       { id:4, kind:'need', pokemon:'히바니', details:'숨겨진 특성(리베로)이면 좋아요', status:'done', author_id:'u3', created_at:t(80) },
     ],
     reservations:[
@@ -1108,7 +1143,7 @@ function postCard(p){
       <span style="display:flex;gap:4px">${open && p.closes_at ? `<span class="chip time">${leftText(p.closes_at)}</span>` : ''}<span class="chip ${open ? 'open' : ''}">${open ? '모집중' : '마감'}</span></span></div>
     <h3>${pk ? `${pk.shiny ? '<span class="shiny">✨</span> ' : ''}${esc(pk.name)}` : esc(p.title)}</h3>
     ${pk ? pkView(pk) : ''}
-    ${p.meta?.reward ? rewardView(p.meta.reward) : ''}
+    ${p.meta?.reward ? rewardView(p.meta.reward, pk) : ''}
     ${kvs ? `<div class="kvs">${kvs}</div>` : ''}
     ${p.body ? `<p class="body">${esc(p.body)}</p>` : ''}
     <div class="by">${avatar(p.author)}<strong>${esc(nameOf(p.author))}</strong><span class="mono">· ${ago(p.created_at)}</span></div>
@@ -1336,22 +1371,36 @@ async function writeRequest(){
       <div class="gold-in">${GOLD}<input id="rw-gold" class="input" name="gold" type="number" min="0" step="1" inputmode="numeric" required placeholder="예: 5000"><span class="muted">골드</span></div></div>
     <div class="grid2">
       <div class="field"><label>개체값이 1 부족할 때마다</label>
-        <div class="gold-in"><span class="sign">−</span><input class="input" name="less" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 덜 주기</span></div></div>
+        <div class="gold-in"><span class="sign">−</span><input class="input" name="less" id="rw-less" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 덜 주기</span>
+          <label class="check"><input type="checkbox" id="rw-strict"> 타협 불가</label></div></div>
       <div class="field"><label>개체값이 1 초과할 때마다</label>
         <div class="gold-in"><span class="sign">+</span><input class="input" name="more" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 더 주기</span></div></div>
     </div>
-    <p class="hint" style="margin:-4px 0 12px">상관없음이 아닌 개체값들의 차이를 모두 더해 계산해요. 예: 공격 31 · 스피드 31을 원했는데 29 · 30이면 3 부족이에요.</p>
+    <p class="hint" style="margin:-4px 0 12px">상관없음이 아닌 개체값들의 차이를 모두 더해 계산해요. 예: 공격 31 · 스피드 31을 원했는데 29 · 30이면 3 부족이에요. 타협 불가는 하나라도 부족하면 받지 않는다는 뜻이에요.</p>
+    <div class="field" id="rw-lv-field"><label>레벨이 1 부족할 때마다</label>
+      <div class="gold-in"><span class="sign">−</span><input class="input" name="lvless" id="rw-lvless" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 덜 주기</span>
+        <label class="check"><input type="checkbox" id="rw-lvstrict"> 타협 불가</label></div>
+      <span class="hint">최대 레벨보다 낮으면 부족한 레벨만큼 깎아요. 예: 최대 Lv.50인데 Lv.45면 5 부족. 타협 불가는 정확히 최대 레벨만 받는다는 뜻이에요.</span></div>
     <div class="field"><label class="check"><input type="checkbox" id="rw-other-on"> 골드 외에 다른 보수도 있어요</label>
       <input class="input" name="other" id="rw-other" maxlength="100" placeholder="예: 마스터볼 1개" hidden></div>`;
   openForm({
     title: '포켓몬 의뢰하기',
     sub: a.admin ? '관리자 의뢰는 자동 마감과 개수 제한이 없어요.' : '올리면 7일 뒤 자동으로 마감돼요. 모집 중인 의뢰는 한 사람당 하나만 올릴 수 있어요.',
     wide: true,
-    html: pkEditorHtml(true) + reward + (a.admin ? deadlineField(true) : '<p class="hint lock">🔒 올린 뒤 일주일이 지나면 자동으로 마감돼요.</p>')
+    html: pkEditorHtml(true, true) + reward + (a.admin ? deadlineField(true) : '<p class="hint lock">🔒 올린 뒤 일주일이 지나면 자동으로 마감돼요.</p>')
       + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="예: 주로 저녁 8~11시 접속 · 레벨 무관 · 마을 창고 앞에서 거래"></textarea></div>`,
     submit: '의뢰 올리기',
     onOpen(){
       bindPkEditor(true);
+      $('#rw-strict').addEventListener('change', (e) => { $('#rw-less').disabled = e.target.checked; });
+      $('#rw-lvstrict').addEventListener('change', (e) => { $('#rw-lvless').disabled = e.target.checked; });
+      const syncLv = () => {
+        const off = $('#pk-lv-any').checked;
+        $('#rw-lv-field').style.opacity = off ? .45 : 1;
+        $('#rw-lvstrict').disabled = off;
+        $('#rw-lvless').disabled = off || $('#rw-lvstrict').checked;
+      };
+      $('#mform').addEventListener('lvchange', syncLv); syncLv();
       $('#rw-other-on').addEventListener('change', (e) => {
         const i = $('#rw-other'); i.hidden = !e.target.checked; i.required = e.target.checked;
         if (e.target.checked) i.focus();
@@ -1360,7 +1409,11 @@ async function writeRequest(){
     async onSubmit(f){
       const pk = readPk();
       const otherOn = $('#rw-other-on').checked;
-      const rw = { gold:intField(f.gold, '보수'), less:intField(f.less, '부족할 때 금액'), more:intField(f.more, '초과할 때 금액'),
+      const strict = $('#rw-strict').checked, lvStrict = !!pk.level && $('#rw-lvstrict').checked;
+      const rw = { gold:intField(f.gold, '보수'),
+                   less: strict ? 0 : intField(f.less, '개체값 부족 금액'), strict,
+                   more: intField(f.more, '개체값 초과 금액'),
+                   lvLess: pk.level && !lvStrict ? intField(f.lvless, '레벨 부족 금액') : 0, lvStrict,
                    other: otherOn ? (f.other || '').trim() : '' };
       if (otherOn && !rw.other) throw new Error('다른 보수 내용을 적어 주세요.');
       const row = { board:'request', title:pkTitle(pk), body:(f.body || '').trim(), meta:{ pk, reward:rw } };
@@ -1462,7 +1515,7 @@ const ACTIONS = {
       sub: have ? '줄 수 있는 포켓몬의 정확한 정보를 적어 주세요. 단원들이 "받을게요"로 예약할 수 있어요.'
                 : '원하는 조건을 골라 주세요. 상관없는 항목은 "상관없음"으로 두면 돼요. 단원들이 "줄게요"로 예약할 수 있어요.',
       wide: true,
-      html: pkEditorHtml(!have) + `<div class="field"><label>추가 정보 (선택)</label><textarea class="input" name="details" maxlength="500" placeholder="예: 주로 저녁 8~11시 접속 · Lv.50 · 기술 구성 등"></textarea></div>`,
+      html: pkEditorHtml(!have, !have) + `<div class="field"><label>추가 정보 (선택)</label><textarea class="input" name="details" maxlength="500" placeholder="예: 주로 저녁 8~11시 접속 · Lv.50 · 기술 구성 등"></textarea></div>`,
       submit: '올리기',
       onOpen(){ bindPkEditor(!have); },
       async onSubmit(f){
