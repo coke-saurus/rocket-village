@@ -168,6 +168,7 @@ create table if not exists public.posts (
   meta        jsonb not null default '{}'::jsonb,
   status      text not null default 'open' check (status in ('open', 'closed')),
   author_id   uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  closes_at   timestamptz,                      -- 이 시각이 지나면 자동 마감
   notified_at timestamptz,
   created_at  timestamptz not null default now()
 );
@@ -192,6 +193,7 @@ create table if not exists public.rocket_listings (
   kind       text not null check (kind in ('have', 'need')),
   pokemon    text not null check (char_length(pokemon) between 1 and 40),
   details    text not null default '' check (char_length(details) <= 500),
+  meta       jsonb not null default '{}'::jsonb,   -- 포켓몬 상세 (특성, 성격, 개체값, 이로치)
   status     text not null default 'open' check (status in ('open', 'done')),
   author_id  uuid not null default auth.uid() references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now()
@@ -207,6 +209,10 @@ create table if not exists public.rocket_reservations (
   created_at   timestamptz not null default now()
 );
 
+-- 예전에 만든 DB에도 새 칸이 생기도록
+alter table public.posts           add column if not exists closes_at timestamptz;
+alter table public.rocket_listings add column if not exists meta jsonb not null default '{}'::jsonb;
+
 -- ---------------------------------------------------------------------
 -- 7. 테이블 권한 (컬럼 단위로 필요한 것만 허용)
 -- ---------------------------------------------------------------------
@@ -220,15 +226,15 @@ grant select on public.fixed_admins, public.profiles, public.posts, public.entri
 
 grant update (discord_name, discord_avatar, mc_name, mc_verified, role) on public.profiles to authenticated;
 
-grant insert (board, title, body, meta) on public.posts to authenticated;
-grant update (title, body, meta, status) on public.posts to authenticated;
+grant insert (board, title, body, meta, closes_at) on public.posts to authenticated;
+grant update (title, body, meta, status, closes_at) on public.posts to authenticated;
 grant delete on public.posts to authenticated;
 
 grant insert (post_id, message) on public.entries to authenticated;
 grant delete on public.entries to authenticated;
 
-grant insert (kind, pokemon, details) on public.rocket_listings to authenticated;
-grant update (pokemon, details, status) on public.rocket_listings to authenticated;
+grant insert (kind, pokemon, details, meta) on public.rocket_listings to authenticated;
+grant update (pokemon, details, status, meta) on public.rocket_listings to authenticated;
 grant delete on public.rocket_listings to authenticated;
 
 grant insert (listing_id, message) on public.rocket_reservations to authenticated;
@@ -295,7 +301,8 @@ create policy entries_insert on public.entries
   with check (user_id = auth.uid()
               and public.is_verified()
               and exists (select 1 from public.posts p
-                          where p.id = post_id and p.status = 'open' and p.board <> 'notice'));
+                          where p.id = post_id and p.status = 'open' and p.board <> 'notice'
+                            and (p.closes_at is null or p.closes_at > now())));
 
 drop policy if exists entries_delete on public.entries;
 create policy entries_delete on public.entries
@@ -350,5 +357,50 @@ create policy rocket_reservations_update on public.rocket_reservations
            or exists (select 1 from public.rocket_listings l
                       where l.id = listing_id and l.author_id = auth.uid())))
   with check (true);
+
+-- ---------------------------------------------------------------------
+-- 9. 글 규칙 (포켓몬 의뢰 7일 마감·1인 1의뢰, 마감 시각)
+-- ---------------------------------------------------------------------
+--    - 포켓몬 의뢰(관리자 제외): 7일 뒤 자동 마감, 모집 중인 의뢰는 1인 1개, 마감 후 다시 열기 불가
+--    - 마감 시각은 지금보다 뒤여야 함
+create or replace function public.guard_post()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  -- 서버 함수(서비스 키)나 SQL Editor 에서의 변경은 그대로 허용
+  if auth.uid() is null then
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.board = 'request' and not public.is_admin() then
+      perform pg_advisory_xact_lock(hashtext('request:' || new.author_id::text));
+      if exists (select 1 from posts
+                 where author_id = new.author_id and board = 'request' and status = 'open'
+                   and (closes_at is null or closes_at > now())) then
+        raise exception '이미 모집 중인 포켓몬 의뢰가 있어요. 기존 의뢰가 마감된 뒤에 올릴 수 있어요.';
+      end if;
+      new.closes_at := now() + interval '7 days';
+    end if;
+    if new.closes_at is not null and new.closes_at <= now() then
+      raise exception '마감 시각은 지금보다 뒤여야 해요.';
+    end if;
+    return new;
+  end if;
+
+  -- UPDATE
+  if old.board = 'request' and not public.is_admin() then
+    new.closes_at := old.closes_at;
+    if new.status = 'open' and old.status <> 'open' then
+      raise exception '마감된 의뢰는 다시 열 수 없어요. 새 의뢰를 올려 주세요.';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists guard_post on public.posts;
+create trigger guard_post
+  before insert or update on public.posts
+  for each row execute function public.guard_post();
+
 
 -- 끝. 이제 사이트에서 디스코드로 로그인한 뒤 SETUP.md 의 "고정 관리자 인증" 단계를 진행하세요.

@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>로켓단 · Team Rocket UnderWorld</title>
+<title>로켓단의 뒷세계 · Team Rocket UnderWorld</title>
 <meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 의뢰, PVP 대회, 경매, 단원 전용 거래소">
-<meta property="og:title" content="로켓단 · Team Rocket UnderWorld">
+<meta property="og:title" content="로켓단의 뒷세계 · Team Rocket UnderWorld">
 <meta property="og:description" content="코블몬 서버 로켓단의 의뢰 · PVP 대회 · 경매 게시판">
 <meta property="og:image" content="/assets/og.jpg">
 <meta name="theme-color" content="#0b0b0e">
-<link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -171,6 +171,7 @@ textarea.input{min-height:90px;resize:vertical}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .field label{font-size:13px;font-weight:600;color:#c9c7d3}
+.hint{font-size:12px;color:var(--muted)}
 .field .hint{font-size:12px;color:var(--muted)}
 .res{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
 .res .dir{font:700 11px/1 var(--mono);letter-spacing:.1em;padding:6px 8px;border-radius:6px;background:var(--redbg);color:var(--red2);text-align:center}
@@ -213,12 +214,83 @@ textarea.input{min-height:90px;resize:vertical}
 .testbox p b{color:var(--text)}
 .linked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
 .panel .linked + p{margin-top:4px}
+.landing-en{font:700 12px/1 var(--mono);letter-spacing:.3em;color:var(--red2);margin:-2px 0 14px}
+.sheet.wide{max-width:780px}
+.check{display:inline-flex;align-items:center;gap:7px;font-size:14px;cursor:pointer;user-select:none}
+.check input{accent-color:var(--red);width:16px;height:16px;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.sprite{image-rendering:pixelated;object-fit:contain}
+.pk-search{position:relative}
+.pk-results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;max-height:300px;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.pk-opt{display:flex;align-items:center;gap:10px;width:100%;padding:2px 12px 2px 6px;border:0;background:none;text-align:left;cursor:pointer;font-size:14px}
+.pk-opt:hover,.pk-opt.on{background:var(--redbg)}
+.pk-opt img{width:44px;height:44px}
+.pk-opt small{margin-left:auto;font:500 11px var(--mono);color:var(--dim)}
+.pk-none{padding:12px;color:var(--muted);font-size:13px}
+.pk-picked{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:4px 12px 4px 4px}
+.pk-picked img{width:76px;height:76px}
+.pk-picked .nm{flex:1;min-width:0}
+.pk-picked .nm b{display:block;font-size:17px}
+.pk-picked .nm small{font:500 11px var(--mono);color:var(--dim)}
+.shiny{color:var(--gold)}
+.pk-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
+.ivbox{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:center;margin-bottom:12px}
+.iv-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.iv-head label{font-size:13px;font-weight:600;color:#c9c7d3}
+.iv-head .btns{display:flex;gap:4px}
+.iv-head .btns button{height:24px;padding:0 8px;font-size:12px}
+.iv-row{display:grid;grid-template-columns:64px minmax(0,1fr) 50px auto;gap:8px;align-items:center;font-size:13px;padding:2px 0}
+.iv-row .lb{font-weight:600}
+.iv-row .lb.up{color:#ff5a5f}.iv-row .lb.dn{color:#5b8cff}
+.iv-row input[type=range]{accent-color:var(--red);width:100%;margin:0}
+.iv-row .iv-num{height:30px;padding:0 4px;text-align:center;font-family:var(--mono)}
+.iv-row.any input[type=range],.iv-row.any .iv-num{opacity:.28}
+.iv-row .check{font-size:12px;color:var(--muted);gap:4px}
+.hexbox{background:#29292e;border:1px solid var(--line);border-radius:12px;padding:4px}
+.hexbox svg{display:block;width:100%;height:auto}
+.hx-ring{fill:none;stroke:#55555d;stroke-width:1.6}
+.hx-axis{stroke:#3d3d44;stroke-width:1}
+.hx-fill{fill:rgba(56,182,214,.78);stroke:#5fd0ea;stroke-width:1.5;stroke-linejoin:round}
+.hx-line{fill:none;stroke:#5fd0ea;stroke-width:3;stroke-linecap:round}
+.hx-dot{fill:#bdf2ff}
+.hx-lb{font:600 13px 'Pretendard Variable',sans-serif;fill:#e8e8ee}
+.hx-val{font:700 13px 'JetBrains Mono',monospace;fill:#fff}
+.hx-val.any{fill:#77777f}
+.hx-lb.up{fill:#ff5a5f}.hx-lb.dn{fill:#5b8cff}
+.gold{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;flex:none}
+.gold-in{display:flex;align-items:center;gap:8px}
+.gold-in .input{max-width:170px;font-family:var(--mono)}
+.gold-in .sign{font:700 15px var(--mono);color:var(--muted);width:12px;text-align:center}
+.pkv{display:grid;grid-template-columns:auto minmax(0,1fr) 92px;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px 10px 6px 4px}
+.pkv .ic{width:72px;height:72px}
+.pkv ul{list-style:none;margin:0;padding:0;font-size:13px;display:grid;gap:3px;min-width:0}
+.pkv li{word-break:break-word}
+.pkv li>span:first-child{color:var(--muted);margin-right:6px;font-size:12px}
+.pkv .ivg{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;border-top:1px solid var(--line);padding:6px 0 0 6px;text-align:center;white-space:nowrap;font:600 12.5px/1.5 var(--mono);color:#ecebf1}
+.pkv .ivg em{display:block;font:500 11px 'Pretendard Variable',sans-serif;font-style:normal;color:var(--muted)}
+.pkv .ivg i{font-style:normal;color:var(--dim)}
+.pkv .ivg .up{color:#ff5a5f}.pkv .ivg .dn{color:#5b8cff}
+.hexmini{background:#29292e;border-radius:9px;padding:2px}
+.hexmini svg{display:block;width:100%;height:auto}
+.reward{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:14px;background:var(--goldbg);border:1px solid rgba(242,193,78,.25);border-radius:9px;padding:8px 10px}
+.reward .g{display:inline-flex;align-items:center;gap:6px;font:700 16px var(--mono);color:var(--gold)}
+.reward .adj{font:500 12px var(--mono);color:#d8c9a0}
+.reward .other{flex-basis:100%;font-size:13px}
+.reward .other b{color:var(--gold)}
+.chip.time{color:#c9c7d3}
 .loading{padding:60px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;letter-spacing:.1em}
 
 @media (max-width:760px){
   .hero,.two{grid-template-columns:1fr}
   .hero h1{font-size:32px}
   .landing h1{font-size:30px}
+  .brand b{font-size:18px;white-space:nowrap}
+  .brand img{width:38px;height:38px}
+  .who .nm{display:none}
+  .userbox .chip{display:none}
+  .ivbox,.grid2{grid-template-columns:1fr}
+  .ivbox .hexbox{max-width:300px;width:100%;margin:0 auto}
+
   .head h1{font-size:26px}
   .mrow{grid-template-columns:1fr}
   .mrow .ctl{justify-content:flex-start}
@@ -233,9 +305,9 @@ textarea.input{min-height:90px;resize:vertical}
 <div id="demo" class="demo" hidden></div>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#home" aria-label="로켓단 홈">
-      <img src="/assets/logo-128.webp" alt="" width="44" height="44">
-      <span><b>로켓단</b><small>TEAM ROCKET UNDERWORLD</small></span>
+    <a class="brand" href="#home" aria-label="로켓단의 뒷세계 홈">
+      <img src="assets/logo-128.webp" alt="" width="44" height="44">
+      <span><b>로켓단의 뒷세계</b><small>TEAM ROCKET UNDERWORLD</small></span>
     </a>
     <div class="userbox" id="userbox"></div>
   </div>
@@ -265,14 +337,16 @@ const DEMO = !CONFIGURED || new URLSearchParams(location.search).has('demo');
 /* ---------- 게시판 정의 ---------- */
 const BOARDS = {
   notice:  { name:'공지', code:'NOTICE', fields:[] },
-  request: { name:'포켓몬 의뢰', code:'MISSION', desc:'필요한 포켓몬을 의뢰하고, 잡아줄 트레이너를 찾아요.',
+  request: { name:'포켓몬 의뢰', code:'MISSION', desc:'필요한 포켓몬을 의뢰하고, 잡아줄 트레이너를 찾아요. 의뢰는 7일 뒤 자동 마감돼요.',
              join:'의뢰 수락', entryLabel:'수락', msgPh:'예: 내일까지 잡아드릴게요. 저녁 8시에 접속합니다.',
-             fields:[{k:'pokemon',label:'필요한 포켓몬',ph:'예: 이브이 (성격 겁쟁이)'},{k:'reward',label:'보상',ph:'예: 5,000 코블달러'}] },
+             fields:[{k:'pokemon',label:'필요한 포켓몬'},{k:'reward',label:'보상'}] },
   pvp:     { name:'PVP 대회', code:'BATTLE', desc:'대회를 열고 참가 신청을 받아요.',
              join:'참가 신청', entryLabel:'참가', msgPh:'예: 주말 저녁에만 가능합니다.',
+             deadline:true,
              fields:[{k:'when',label:'일시',ph:'예: 11/8(토) 저녁 9시'},{k:'rules',label:'규칙',ph:'예: 싱글 6:6, Lv.50 고정'},{k:'capacity',label:'정원',ph:'예: 16',type:'number'}] },
   auction: { name:'경매 모집', code:'AUCTION', desc:'경매를 예고하고 참여자를 모아요.',
              join:'참여 신청', entryLabel:'참여', msgPh:'예: 시작가 이상 입찰 의사 있습니다.',
+             deadline:true,
              fields:[{k:'item',label:'경매 물품',ph:'예: 이로치 리자몽 Lv.60'},{k:'when',label:'일시',ph:'예: 11/2(일) 오후 3시'},{k:'start',label:'시작가',ph:'예: 10,000'}] },
 };
 const ROLE_NAME = { member:'일반', rocket:'로켓단', admin:'관리자' };
@@ -312,12 +386,250 @@ function toast(msg, kind=''){
   setTimeout(() => el.remove(), kind === 'err' || kind === 'warn' ? 6500 : 3800);
 }
 
+
+/* ---------- 마감 시각 ---------- */
+const isOpen = (p) => p.status === 'open' && (!p.closes_at || new Date(p.closes_at) > new Date());
+function leftText(iso){
+  const s = (new Date(iso) - Date.now()) / 1000;
+  if (s <= 0) return '마감';
+  if (s < 3600) return `${Math.max(1, Math.floor(s/60))}분 남음`;
+  if (s < 86400) return `${Math.floor(s/3600)}시간 남음`;
+  return `${Math.floor(s/86400)}일 남음`;
+}
+const WD = ['일','월','화','수','목','금','토'];
+function fmtDate(iso){
+  const d = new Date(iso);
+  return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function localInputValue(d){
+  const z = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+}
+const won = (n) => Number(n || 0).toLocaleString('ko-KR');
+const GOLD = '<img class="gold" src="assets/gold.png" alt="골드">';
+
+/* ---------- 포켓몬 데이터 ---------- */
+// 육각형 꼭짓점 순서: 위(체력)부터 시계 방향
+const STATS = [
+  { k:'hp', n:'체력' }, { k:'atk', n:'공격' }, { k:'def', n:'방어' },
+  { k:'spe', n:'스피드' }, { k:'spd', n:'특수방어' }, { k:'spa', n:'특수공격' },
+];
+const STAT_NAME = Object.fromEntries(STATS.map(x => [x.k, x.n]));
+const STAT_ROWS = ['hp','atk','def','spa','spd','spe'].map(k => STATS.find(x => x.k === k));
+const STAT_SHORT = { hp:'체력', atk:'공격', def:'방어', spa:'특공', spd:'특방', spe:'스피드' };
+const SPR = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+let DEX = null;
+async function loadDex(){
+  if (DEX) return DEX;
+  const r = await fetch('assets/pokemon.json');
+  if (!r.ok) throw new Error('포켓몬 목록을 불러오지 못했어요.');
+  const d = await r.json();
+  d.byId = new Map(d.list.map(x => [x[0], x]));
+  d.natureByKey = new Map(d.natures.map(n => [n[0], n]));
+  return (DEX = d);
+}
+function spriteUrl(id, shiny, flags=15){
+  if (shiny && (flags & 2)) return `${SPR}shiny/${id}.png`;
+  if (shiny && (flags & 8)) return `${SPR}other/home/shiny/${id}.png`;
+  if (flags & 1) return `${SPR}${id}.png`;
+  return `${SPR}other/home/${id}.png`;
+}
+const natureLabel = (n) => n[2] ? `${n[1]} (${STAT_NAME[n[2]]}▲ ${STAT_NAME[n[3]]}▼)` : `${n[1]} (보정 없음)`;
+const pkTitle = (pk) => `${pk.shiny ? '✨ ' : ''}${pk.name}`;
+
+/* 육각형 그래프: ivs = {hp:31|null, ...}, nature = {up, dn} | null */
+function hexSvg(ivs, nature, { labels=true } = {}){
+  const W = labels ? 300 : 120, H = labels ? 270 : 120;
+  const cx = W/2, cy = labels ? 136 : 60, R = labels ? 78 : 50;
+  const pt = (i, r) => { const a = (-90 + 60*i) * Math.PI / 180; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; };
+  const P = (p) => p.map(n => n.toFixed(1)).join(',');
+  const ring = (r) => STATS.map((_, i) => P(pt(i, r))).join(' ');
+  let out = [1, 2/3, 1/3].map(f => `<polygon class="hx-ring" points="${ring(R*f)}"/>`).join('');
+  out += STATS.map((_, i) => `<line class="hx-axis" x1="${cx}" y1="${cy}" x2="${pt(i,R)[0].toFixed(1)}" y2="${pt(i,R)[1].toFixed(1)}"/>`).join('');
+  const pts = STATS.map((x, i) => ivs?.[x.k] == null ? null : pt(i, R * Math.max(.05, ivs[x.k] / 31))).filter(Boolean);
+  if (pts.length >= 3) out += `<polygon class="hx-fill" points="${pts.map(P).join(' ')}"/>`;
+  else if (pts.length === 2) out += `<polyline class="hx-line" points="${pts.map(P).join(' ')}"/>`;
+  out += pts.map(p => `<circle class="hx-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${labels ? 3 : 2.4}"/>`).join('');
+  if (labels) {
+    STATS.forEach((x, i) => {
+      const [lx, ly] = pt(i, R + (i === 0 || i === 3 ? 18 : 14));
+      const anchor = i === 0 || i === 3 ? 'middle' : i < 3 ? 'start' : 'end';
+      const y0 = i === 0 ? ly - 16 : i === 3 ? ly + 4 : ly - 6;
+      const cls = nature?.up === x.k ? 'up' : nature?.dn === x.k ? 'dn' : '';
+      const mark = cls === 'up' ? '▲ ' : cls === 'dn' ? '▼ ' : '';
+      const v = ivs?.[x.k];
+      out += `<text class="hx-lb ${cls}" x="${lx.toFixed(1)}" y="${y0.toFixed(1)}" text-anchor="${anchor}">${mark}${x.n}</text>`;
+      out += `<text class="hx-val ${v == null ? 'any' : ''}" x="${lx.toFixed(1)}" y="${(y0 + 16).toFixed(1)}" text-anchor="${anchor}">${v == null ? '상관없음' : v}</text>`;
+    });
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="개체값 육각형 그래프">${out}</svg>`;
+}
+
+/* 포켓몬 입력 폼 (allowAny: 상관없음 허용) */
+function pkEditorHtml(allowAny){
+  const ivRows = STAT_ROWS.map(x => `
+    <div class="iv-row" data-stat="${x.k}">
+      <span class="lb">${x.n}</span>
+      <input type="range" min="0" max="31" value="31" data-iv="${x.k}" aria-label="${x.n} 개체값">
+      <input type="number" min="0" max="31" value="31" class="input iv-num" data-ivn="${x.k}" aria-label="${x.n} 개체값 숫자">
+      ${allowAny ? `<label class="check"><input type="checkbox" data-ivany="${x.k}">상관없음</label>` : '<span></span>'}
+    </div>`).join('');
+  const natures = DEX.natures.map(n => `<option value="${n[0]}">${esc(natureLabel(n))}</option>`).join('');
+  return `
+  <div class="pkx" data-any="${allowAny ? 1 : 0}">
+    <div class="field"><label>포켓몬</label>
+      <div class="pk-search" id="pk-search">
+        <input class="input" id="pk-q" placeholder="이름으로 검색 (예: 이브이, 가라르, 로토무)" autocomplete="off" role="combobox" aria-expanded="false">
+        <div class="pk-results" id="pk-res" role="listbox" hidden></div>
+      </div>
+      <div class="pk-picked" id="pk-picked" hidden>
+        <img class="sprite" id="pk-img" alt="">
+        <div class="nm"><b id="pk-name"></b><small id="pk-no"></small></div>
+        <button type="button" class="btn sm ghost" data-act="pk-change">변경</button>
+      </div>
+      <div class="pk-row"><label class="check"><input type="checkbox" id="pk-shiny"> <span class="shiny">✨</span> 이로치</label></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="pk-ability">특성</label>
+        <select class="input" id="pk-ability" disabled><option>포켓몬을 먼저 골라 주세요</option></select></div>
+      <div class="field"><label for="pk-nature">성격</label>
+        <select class="input" id="pk-nature">${allowAny ? '<option value="">상관없음</option>' : '<option value="" disabled selected>성격을 골라 주세요</option>'}${natures}</select></div>
+    </div>
+    <div class="iv-head"><label>개체값 (0~31)</label>
+      <div class="btns"><button type="button" class="btn sm ghost" data-act="iv-all" data-v="31">전부 31</button>
+        ${allowAny ? '<button type="button" class="btn sm ghost" data-act="iv-all" data-v="any">전부 상관없음</button>' : '<button type="button" class="btn sm ghost" data-act="iv-all" data-v="0">전부 0</button>'}</div></div>
+    <div class="ivbox"><div class="ivs">${ivRows}</div><div class="hexbox" id="pk-hex"></div></div>
+  </div>`;
+}
+
+let PK = null; // 현재 폼 상태
+function bindPkEditor(allowAny){
+  PK = { sel:null, allowAny };
+  const root = $('#mform'), q = $('#pk-q'), res = $('#pk-res');
+  if (allowAny) root.querySelectorAll('[data-ivany]').forEach(c => { c.checked = true; });
+  let hits = [], hi = 0;
+  const showRes = (open) => { res.hidden = !open; q.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+  const renderRes = () => {
+    if (!hits.length) { res.innerHTML = '<div class="pk-none">검색 결과가 없어요.</div>'; return; }
+    res.innerHTML = hits.map((x, i) => `<button type="button" class="pk-opt ${i === hi ? 'on' : ''}" data-act="pk-pick" data-id="${x[0]}" role="option">
+      <img class="sprite" src="${spriteUrl(x[0], false, x[5])}" alt="" loading="lazy">${esc(x[1])}<small>No.${String(x[6]).padStart(4,'0')}</small></button>`).join('');
+  };
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!t) { showRes(false); return; }
+    const num = /^\d+$/.test(t) ? Number(t) : null;
+    hits = DEX.list.filter(x => num ? x[6] === num : (x[1].toLowerCase().includes(t) || x[2].includes(t))).slice(0, 40);
+    hi = 0; renderRes(); showRes(true);
+  });
+  q.addEventListener('keydown', (e) => {
+    if (res.hidden) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); hi = Math.max(0, Math.min(hits.length - 1, hi + (e.key === 'ArrowDown' ? 1 : -1))); renderRes();
+      res.querySelector('.pk-opt.on')?.scrollIntoView({ block:'nearest' });
+    } else if (e.key === 'Enter') { e.preventDefault(); if (hits[hi]) pickPk(hits[hi][0]); }
+    else if (e.key === 'Escape') { e.stopPropagation(); showRes(false); }
+  });
+  root.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.dataset.iv) { root.querySelector(`[data-ivn="${t.dataset.iv}"]`).value = t.value; ivUntick(t.dataset.iv); }
+    else if (t.dataset.ivn) {
+      const v = Math.max(0, Math.min(31, Number(t.value) || 0));
+      root.querySelector(`[data-iv="${t.dataset.ivn}"]`).value = v; ivUntick(t.dataset.ivn);
+    }
+    drawPkHex();
+  });
+  root.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.ivn) t.value = Math.max(0, Math.min(31, Math.round(Number(t.value) || 0)));
+    if (t.id === 'pk-shiny') updatePicked();
+    if (t.dataset.ivany) t.closest('.iv-row').classList.toggle('any', t.checked);
+    drawPkHex();
+  });
+  root.querySelectorAll('[data-ivany]').forEach(c => c.closest('.iv-row').classList.toggle('any', c.checked));
+  drawPkHex();
+}
+function ivUntick(k){
+  const c = $(`#mform [data-ivany="${k}"]`);
+  if (c?.checked) { c.checked = false; c.closest('.iv-row').classList.remove('any'); }
+}
+function pickPk(id){
+  const x = DEX.byId.get(Number(id)); if (!x) return;
+  PK.sel = x;
+  $('#pk-res').hidden = true; $('#pk-search').hidden = true; $('#pk-picked').hidden = false;
+  const ab = $('#pk-ability');
+  const opts = x[3].map(a => `<option value="${a}">${esc(DEX.abilities[a])}</option>`).join('')
+    + (x[4] ? `<option value="${x[4]}">${esc(DEX.abilities[x[4]])} (숨겨진 특성)</option>` : '');
+  ab.innerHTML = (PK.allowAny ? '<option value="">상관없음</option>' : '') + opts;
+  ab.disabled = false;
+  updatePicked();
+}
+function updatePicked(){
+  const x = PK?.sel; if (!x) return;
+  const shiny = $('#pk-shiny').checked;
+  $('#pk-img').src = spriteUrl(x[0], shiny, x[5]);
+  $('#pk-name').innerHTML = `${shiny ? '<span class="shiny">✨</span> ' : ''}${esc(x[1])}`;
+  $('#pk-no').textContent = `No.${String(x[6]).padStart(4,'0')}${shiny ? ' · 이로치' : ''}`;
+}
+function readIvs(){
+  const ivs = {};
+  STATS.forEach(x => {
+    const any = $(`#mform [data-ivany="${x.k}"]`)?.checked;
+    ivs[x.k] = any ? null : Math.max(0, Math.min(31, Math.round(Number($(`#mform [data-ivn="${x.k}"]`).value) || 0)));
+  });
+  return ivs;
+}
+function readNature(){
+  const k = $('#pk-nature')?.value;
+  const n = k && DEX.natureByKey.get(k);
+  return n ? { k:n[0], n:n[1], up:n[2] || null, dn:n[3] || null } : null;
+}
+function drawPkHex(){ const h = $('#pk-hex'); if (h) h.innerHTML = hexSvg(readIvs(), readNature()); }
+function readPk(){
+  const x = PK?.sel;
+  if (!x) throw new Error('포켓몬을 검색해서 골라 주세요.');
+  const shiny = $('#pk-shiny').checked;
+  const a = $('#pk-ability').value;
+  if (!PK.allowAny && !a) throw new Error('특성을 골라 주세요.');
+  const nature = readNature();
+  if (!PK.allowAny && !nature) throw new Error('성격을 골라 주세요.');
+  return {
+    id:x[0], name:x[1], shiny, icon:spriteUrl(x[0], shiny, x[5]),
+    ability: a ? { n:DEX.abilities[a], hidden:Number(a) === x[4] } : null,
+    nature, ivs:readIvs(),
+  };
+}
+
+/* 카드에 보여줄 포켓몬 정보 */
+function pkView(pk){
+  const nat = pk.nature;
+  const ivl = STAT_ROWS.map(x => {
+    const v = pk.ivs?.[x.k];
+    const cls = nat?.up === x.k ? 'up' : nat?.dn === x.k ? 'dn' : '';
+    return `<span><em class="${cls}">${STAT_SHORT[x.k]}</em>${v == null ? '<i>—</i>' : v}</span>`;
+  }).join('');
+  return `<div class="pkv">
+    <img class="sprite ic" src="${esc(pk.icon)}" alt="${esc(pk.name)}" loading="lazy">
+    <ul>
+      <li><span>특성</span>${pk.ability ? `${esc(pk.ability.n)}${pk.ability.hidden ? ' <span class="chip">숨특</span>' : ''}` : '상관없음'}</li>
+      <li><span>성격</span>${nat ? esc(nat.n) : '상관없음'}</li>
+    </ul>
+    <div class="hexmini">${hexSvg(pk.ivs, nat, { labels:false })}</div>
+    <div class="ivg">${ivl}</div>
+  </div>`;
+}
+function rewardView(r){
+  if (!r) return '';
+  const adj = [r.less ? `1 부족당 −${won(r.less)}` : '', r.more ? `1 초과당 +${won(r.more)}` : ''].filter(Boolean).join(' · ');
+  return `<div class="reward"><span class="g">${GOLD}${won(r.gold)}</span>${adj ? `<span class="adj">${adj}</span>` : ''}
+    ${r.other ? `<span class="other"><b>+</b> ${esc(r.other)}</span>` : ''}</div>`;
+}
+
 /* ---------- 모달 ---------- */
 let modalState = null;
-function openForm({ title, sub='', html='', submit='확인', danger=false, onSubmit, onCancel }){
+function openForm({ title, sub='', html='', submit='확인', danger=false, wide=false, onSubmit, onCancel, onOpen }){
   modalState = { onSubmit, onCancel };
   $('#modal').innerHTML = `
-    <form class="sheet" id="mform" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <form class="sheet ${wide ? 'wide' : ''}" id="mform" role="dialog" aria-modal="true" aria-label="${esc(title)}" novalidate>
       <h3>${esc(title)}</h3>${sub ? `<p class="sub">${sub}</p>` : ''}
       ${html}
       <div class="foot">
@@ -326,7 +638,8 @@ function openForm({ title, sub='', html='', submit='확인', danger=false, onSub
       </div>
     </form>`;
   $('#modal').hidden = false;
-  setTimeout(() => $('#mform input:not([type=hidden]), #mform textarea')?.focus(), 30);
+  onOpen?.();
+  setTimeout(() => $('#mform input:not([type=hidden]):not([type=checkbox]), #mform textarea')?.focus(), 30);
 }
 function closeModal(cancelled=true){
   if (cancelled) modalState?.onCancel?.();
@@ -339,6 +652,8 @@ function ask(title, text, submit='확인', danger=false){
 document.addEventListener('submit', async (e) => {
   if (e.target.id !== 'mform') return;
   e.preventDefault();
+  const bad = [...e.target.querySelectorAll('[required]')].find(el => !el.hidden && !el.disabled && !String(el.value).trim());
+  if (bad) { toast(`${bad.closest('.field')?.querySelector('label')?.textContent || '필수 칸'}을(를) 채워 주세요.`, 'err'); bad.focus(); return; }
   const btn = e.target.querySelector('[type=submit]'); btn.disabled = true;
   const data = Object.fromEntries(new FormData(e.target));
   try {
@@ -399,6 +714,7 @@ function makeSupaApi(){
     },
     createPost(d){ return run(sb.from('posts').insert(d).select().single()); },
     setPostStatus(id, status){ return run(sb.from('posts').update({ status }).eq('id', id)); },
+    updatePost(id, patch){ return run(sb.from('posts').update(patch).eq('id', id)); },
     deletePost(id){ return run(sb.from('posts').delete().eq('id', id)); },
     createEntry(post_id, message){ return run(sb.from('entries').insert({ post_id, message }).select().single()); },
     deleteEntry(id){ return run(sb.from('entries').delete().eq('id', id)); },
@@ -430,7 +746,8 @@ function makeSupaApi(){
    데이터 계층 — 데모 (설정 전 미리보기, 저장되지 않음)
    ===================================================================== */
 function makeDemoApi(){
-  const H = 3600e3, now = Date.now(), t = (h) => new Date(now - h*H).toISOString();
+  const H = 3600e3, now = Date.now(), t = (h) => new Date(now - h*H).toISOString(), after = (h) => new Date(now + h*H).toISOString();
+  const demoPk = (id, name, shiny, ability, nature, ivs) => ({ id, name, shiny, icon:spriteUrl(id, shiny), ability, nature, ivs });
   const D = {
     fixed:['RKT_Boss'],
     profiles:[
@@ -443,10 +760,14 @@ function makeDemoApi(){
     ],
     posts:[
       { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
-      { id:2, board:'request', title:'성격 겁쟁이 이브이 구해요', body:'개체값은 상관없어요. 마을 창고 앞에서 거래해요.', meta:{ pokemon:'이브이 (겁쟁이)', reward:'5,000 코블달러' }, status:'open', author_id:'u4', created_at:t(5) },
-      { id:3, board:'request', title:'얼음돌 3개 필요합니다', body:'', meta:{ pokemon:'얼음돌 x3', reward:'썬더스톤 1개' }, status:'closed', author_id:'u3', created_at:t(52) },
-      { id:4, board:'pvp', title:'제1회 로켓단 컵 (싱글 배틀)', body:'우승자에게 마스터볼 1개!', meta:{ when:'11/8(토) 저녁 9시', rules:'싱글 6:6 · Lv.50 고정', capacity:'8' }, status:'open', author_id:'u1', created_at:t(12) },
-      { id:5, board:'auction', title:'이로치 리자몽 경매 예고', body:'마을 광장에서 진행합니다.', meta:{ item:'이로치 리자몽 Lv.60', when:'11/2(일) 오후 3시', start:'10,000' }, status:'open', author_id:'u2', created_at:t(20) },
+      { id:2, board:'request', title:'✨ 이브이', body:'마을 창고 앞에서 거래해요.', status:'open', author_id:'u4', created_at:t(5), closes_at:after(6*24 + 19),
+        meta:{ pk:demoPk(133, '이브이', true, { n:'적응력', hidden:false }, { k:'timid', n:'겁쟁이', up:'spe', dn:'atk' }, { hp:31, atk:null, def:31, spe:31, spd:31, spa:31 }),
+               reward:{ gold:5000, less:100, more:50, other:'' } } },
+      { id:3, board:'request', title:'다투곰 (붉은 달)', body:'', status:'closed', author_id:'u3', created_at:t(52), closes_at:after(-20),
+        meta:{ pk:demoPk(10272, '다투곰 (붉은 달)', false, { n:'심안', hidden:false }, null, { hp:31, atk:null, def:null, spe:null, spd:null, spa:31 }),
+               reward:{ gold:20000, less:0, more:0, other:'마스터볼 1개' } } },
+      { id:4, board:'pvp', title:'제1회 로켓단 컵 (싱글 배틀)', body:'우승자에게 마스터볼 1개!', meta:{ when:'11/8(토) 저녁 9시', rules:'싱글 6:6 · Lv.50 고정', capacity:'8' }, status:'open', author_id:'u1', created_at:t(12), closes_at:after(50) },
+      { id:5, board:'auction', title:'이로치 리자몽 경매 예고', body:'마을 광장에서 진행합니다.', meta:{ item:'이로치 리자몽 Lv.60', when:'11/2(일) 오후 3시', start:'10,000' }, status:'open', author_id:'u2', created_at:t(20), closes_at:after(20) },
     ],
     entries:[
       { id:1, post_id:4, user_id:'u2', message:'참가합니다!', created_at:t(10) },
@@ -454,9 +775,11 @@ function makeDemoApi(){
       { id:3, post_id:5, user_id:'u4', message:'시작가 이상 입찰 의사 있습니다.', created_at:t(3) },
     ],
     listings:[
-      { id:1, kind:'have', pokemon:'메타몽', details:'Lv.30 · 개체값 5V · 교배용으로 빌려드려요', status:'open', author_id:'u3', created_at:t(9) },
+      { id:1, kind:'have', pokemon:'메타몽', details:'Lv.30 · 교배용으로 빌려드려요', status:'open', author_id:'u3', created_at:t(9),
+        meta:{ pk:demoPk(132, '메타몽', false, { n:'괴짜', hidden:true }, { k:'hardy', n:'노력', up:null, dn:null }, { hp:31, atk:31, def:31, spe:31, spd:31, spa:0 }) } },
       { id:2, kind:'have', pokemon:'두랄루돈', details:'Lv.45 · 성격 고집', status:'open', author_id:'u2', created_at:t(26) },
-      { id:3, kind:'need', pokemon:'저리더프', details:'진화용 · 레벨 무관', status:'open', author_id:'u2', created_at:t(2) },
+      { id:3, kind:'need', pokemon:'✨ 저리더프', details:'진화용 · 레벨 무관', status:'open', author_id:'u2', created_at:t(2),
+        meta:{ pk:demoPk(848, '저리더프', true, null, null, { hp:null, atk:null, def:null, spe:31, spd:null, spa:null }) } },
       { id:4, kind:'need', pokemon:'히바니', details:'숨겨진 특성(리베로)이면 좋아요', status:'done', author_id:'u3', created_at:t(80) },
     ],
     reservations:[
@@ -488,8 +811,20 @@ function makeDemoApi(){
         entries:D.entries.filter(e => e.post_id === p.id).map(e => ({ ...e, user:pub(prof(e.user_id)) })),
       }));
     },
-    async createPost(d){ const p = { id:++seq, ...d, status:'open', author_id:meId(), created_at:nowIso() }; D.posts.push(p); return p; },
-    async setPostStatus(id, s){ byId(D.posts, id).status = s; },
+    async createPost(d){
+      const me = meId(), admin = access(prof(me)).admin;
+      if (d.board === 'request' && !admin) {
+        if (D.posts.some(p => p.board === 'request' && p.author_id === me && isOpen(p))) throw new Error('이미 모집 중인 포켓몬 의뢰가 있어요. 기존 의뢰가 마감된 뒤에 올릴 수 있어요.');
+        d = { ...d, closes_at:new Date(Date.now() + 7*86400e3).toISOString() };
+      }
+      const p = { id:++seq, closes_at:null, ...d, status:'open', author_id:me, created_at:nowIso() }; D.posts.push(p); return p;
+    },
+    async setPostStatus(id, s){
+      const p = byId(D.posts, id);
+      if (p.board === 'request' && !access(prof(meId())).admin && s === 'open' && p.status !== 'open') throw new Error('마감된 의뢰는 다시 열 수 없어요. 새 의뢰를 올려 주세요.');
+      p.status = s;
+    },
+    async updatePost(id, patch){ Object.assign(byId(D.posts, id), patch); },
     async deletePost(id){ D.posts = D.posts.filter(p => p.id !== id); D.entries = D.entries.filter(e => e.post_id !== id); },
     async createEntry(post_id, message){ if (D.entries.some(e => e.post_id === post_id && e.user_id === meId())) throw new Error('이미 처리된 요청이에요.'); const e = { id:++seq, post_id, user_id:meId(), message, created_at:nowIso() }; D.entries.push(e); return e; },
     async deleteEntry(id){ D.entries = D.entries.filter(e => e.id !== id); },
@@ -597,8 +932,9 @@ async function refresh(){
 /* ---------- 로그인 전 ---------- */
 function landing(){
   return `<section class="landing"><div>
-    <div class="emb"><img src="/assets/logo.webp" alt="로켓단 로고" width="640" height="640"></div>
-    <h1>Team Rocket UnderWorld</h1>
+    <div class="emb"><img src="assets/logo.webp" alt="로켓단 로고" width="640" height="640"></div>
+    <h1>로켓단의 뒷세계</h1>
+    <div class="landing-en">TEAM ROCKET UNDERWORLD</div>
     <p>코블몬 서버 로켓단의 의뢰 · 대회 · 경매 게시판</p>
     <button class="btn discord" data-act="login">디스코드로 로그인</button>
     <ol class="steps">
@@ -651,7 +987,7 @@ async function viewHome(){
     S.api.listPosts(['request','pvp','auction'], 8),
   ]);
   const me = S.me, a = acc();
-  const openCount = recent.filter(p => p.status === 'open').length;
+  const openCount = recent.filter(isOpen).length;
   return `
   ${a.verified ? '' : gate()}
   <section class="hero">
@@ -681,7 +1017,7 @@ async function viewHome(){
   <h2 class="sec">LATEST · 최근 글</h2>
   ${recent.length ? `<div class="feed">${recent.map(p => `
     <a href="#${p.board}">
-      <span class="chip ${p.status === 'open' ? 'red' : ''}">${BOARDS[p.board].code}</span>
+      <span class="chip ${isOpen(p) ? 'red' : ''}">${BOARDS[p.board].code}</span>
       <span class="t">${esc(p.title)}</span>
       <span class="when">${ago(p.created_at)}</span>
     </a>`).join('')}</div>` : '<div class="empty">아직 글이 없어요. 첫 의뢰를 올려보세요!</div>'}`;
@@ -706,9 +1042,14 @@ function postCard(p){
   const myEntry = entries.find(e => e.user_id === me.id);
   const cap = Number(String(p.meta?.capacity || '').replace(/[^0-9]/g, '')) || 0;
   const full = cap > 0 && entries.length >= cap;
-  const open = p.status === 'open';
-  const kvs = B.fields.filter(f => p.meta?.[f.k]).map(f =>
-    `<div class="kv"><span>${esc(f.label)}</span><b>${esc(p.meta[f.k])}${f.k === 'capacity' ? `명 (${entries.length}명 신청)` : ''}</b></div>`).join('');
+  const open = isOpen(p);
+  const timeUp = p.status === 'open' && !open;
+  const pk = p.meta?.pk;
+
+  const kvList = B.fields.filter(f => p.meta?.[f.k] && typeof p.meta[f.k] !== 'object').map(f =>
+    `<div class="kv"><span>${esc(f.label)}</span><b>${esc(p.meta[f.k])}${f.k === 'capacity' ? ` · 신청 ${entries.length}` : ''}</b></div>`);
+  if (p.closes_at) kvList.push(`<div class="kv"><span>${p.board === 'request' ? '자동 마감' : '신청 마감'}</span><b>${fmtDate(p.closes_at)}</b></div>`);
+  const kvs = kvList.join('');
 
   let join = '';
   if (open && !mine) {
@@ -717,14 +1058,24 @@ function postCard(p){
     else if (full) join = `<button class="btn sm" disabled>정원 마감</button>`;
     else join = `<button class="btn sm red" data-act="join" data-id="${p.id}">${B.join}</button>`;
   }
-  const manage = (mine || a.admin)
-    ? `<button class="btn sm ghost" data-act="post-status" data-id="${p.id}" data-status="${open ? 'closed' : 'open'}">${open ? '마감하기' : '다시 열기'}</button>` : '';
+  let manage = '';
+  if (mine || a.admin) {
+    if (open) manage = `<button class="btn sm ghost" data-act="post-status" data-id="${p.id}" data-status="closed">마감하기</button>`;
+    else if (p.board !== 'request' || a.admin)
+      manage = timeUp && B.deadline
+        ? `<button class="btn sm ghost" data-act="post-deadline" data-id="${p.id}">다시 열기</button>`
+        : `<button class="btn sm ghost" data-act="post-status" data-id="${p.id}" data-status="open">다시 열기</button>`;
+    if (open && B.deadline) manage += `<button class="btn sm ghost" data-act="post-deadline" data-id="${p.id}">마감 시각</button>`;
+  }
   const del = a.admin ? `<button class="btn sm danger" data-act="del-post" data-id="${p.id}">삭제</button>` : '';
 
   return `
   <article class="card ${open ? '' : 'closed'}">
-    <div class="tag"><span class="fid">${B.code} #${pad(p.id)}</span><span class="chip ${open ? 'open' : ''}">${open ? '모집중' : '마감'}</span></div>
-    <h3>${esc(p.title)}</h3>
+    <div class="tag"><span class="fid">${B.code} #${pad(p.id)}</span>
+      <span style="display:flex;gap:4px">${open && p.closes_at ? `<span class="chip time">${leftText(p.closes_at)}</span>` : ''}<span class="chip ${open ? 'open' : ''}">${open ? '모집중' : '마감'}</span></span></div>
+    <h3>${pk ? `${pk.shiny ? '<span class="shiny">✨</span> ' : ''}${esc(pk.name)}` : esc(p.title)}</h3>
+    ${pk ? pkView(pk) : ''}
+    ${p.meta?.reward ? rewardView(p.meta.reward) : ''}
     ${kvs ? `<div class="kvs">${kvs}</div>` : ''}
     ${p.body ? `<p class="body">${esc(p.body)}</p>` : ''}
     <div class="by">${avatar(p.author)}<strong>${esc(nameOf(p.author))}</strong><span class="mono">· ${ago(p.created_at)}</span></div>
@@ -776,7 +1127,8 @@ function listingCard(l){
   <article class="card ${open ? '' : 'closed'}" data-pokemon="${esc(l.pokemon)}" data-owner="${esc(nameOf(l.author))}" data-kind="${l.kind}">
     <div class="tag"><span class="fid">${l.kind === 'have' ? 'HAVE' : 'NEED'} #${pad(l.id)}</span>
       <span class="chip ${open ? 'open' : ''}">${open ? (l.kind === 'have' ? '드려요' : '구해요') : '완료'}</span></div>
-    <h3>${esc(l.pokemon)}</h3>
+    <h3>${l.meta?.pk ? `${l.meta.pk.shiny ? '<span class="shiny">✨</span> ' : ''}${esc(l.meta.pk.name)}` : esc(l.pokemon)}</h3>
+    ${l.meta?.pk ? pkView(l.meta.pk) : ''}
     ${l.details ? `<p class="body">${esc(l.details)}</p>` : ''}
     <div class="by">${avatar(l.author)}<strong>${esc(nameOf(l.author))}</strong><span class="mono">· ${ago(l.created_at)}</span>
       ${mine && pending ? `<span class="chip red" style="margin-left:auto">예약 ${pending}건</span>` : ''}</div>
@@ -918,6 +1270,75 @@ function viewMe(){
   ${form}`;
 }
 
+
+/* ---------- 포켓몬 의뢰 글쓰기 ---------- */
+function deadlineField(){
+  return `<div class="field"><label>신청 마감 시각 (선택)</label>
+    <input type="datetime-local" class="input" name="closes_at" min="${localInputValue(new Date())}">
+    <span class="hint">정한 시각이 지나면 마감 버튼을 누르지 않아도 자동으로 신청이 닫혀요. 비워 두면 직접 마감해요.</span></div>`;
+}
+function readDeadline(f){
+  if (!f.closes_at) return null;
+  const d = new Date(f.closes_at);
+  if (isNaN(d)) throw new Error('마감 시각을 다시 확인해 주세요.');
+  if (d <= new Date()) throw new Error('마감 시각은 지금보다 뒤여야 해요.');
+  return d.toISOString();
+}
+function intField(v, label){
+  const n = Number(String(v ?? '').replace(/[,\s]/g, '') || 0);
+  if (!Number.isInteger(n) || n < 0) throw new Error(`${label}은(는) 0 이상의 정수로 적어 주세요.`);
+  return n;
+}
+async function writeRequest(){
+  const a = acc();
+  try { await loadDex(); } catch (e) { return toast(e.message, 'err'); }
+  if (!a.admin) {
+    const mineOpen = (await S.api.listPosts('request')).find(p => p.author_id === S.me.id && isOpen(p));
+    if (mineOpen) return toast('이미 모집 중인 포켓몬 의뢰가 있어요. 기존 의뢰가 마감되거나 직접 마감한 뒤에 올릴 수 있어요.', 'warn');
+  }
+  const reward = `
+    <div class="field"><label for="rw-gold">보수</label>
+      <div class="gold-in">${GOLD}<input id="rw-gold" class="input" name="gold" type="number" min="0" step="1" inputmode="numeric" required placeholder="예: 5000"><span class="muted">골드</span></div></div>
+    <div class="grid2">
+      <div class="field"><label>개체값이 1 부족할 때마다</label>
+        <div class="gold-in"><span class="sign">−</span><input class="input" name="less" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 덜 주기</span></div></div>
+      <div class="field"><label>개체값이 1 초과할 때마다</label>
+        <div class="gold-in"><span class="sign">+</span><input class="input" name="more" type="number" min="0" step="1" value="0" inputmode="numeric"><span class="muted">골드 더 주기</span></div></div>
+    </div>
+    <p class="hint" style="margin:-4px 0 12px">상관없음이 아닌 개체값들의 차이를 모두 더해 계산해요. 예: 공격 31 · 스피드 31을 원했는데 29 · 30이면 3 부족이에요.</p>
+    <div class="field"><label class="check"><input type="checkbox" id="rw-other-on"> 골드 외에 다른 보수도 있어요</label>
+      <input class="input" name="other" id="rw-other" maxlength="100" placeholder="예: 마스터볼 1개" hidden></div>`;
+  openForm({
+    title: '포켓몬 의뢰하기',
+    sub: a.admin ? '관리자 의뢰는 자동 마감과 개수 제한이 없어요.' : '올리면 7일 뒤 자동으로 마감돼요. 모집 중인 의뢰는 한 사람당 하나만 올릴 수 있어요.',
+    wide: true,
+    html: pkEditorHtml(true) + reward + (a.admin ? deadlineField() : '')
+      + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="레벨, 거래 장소, 기한 등"></textarea></div>`,
+    submit: '의뢰 올리기',
+    onOpen(){
+      bindPkEditor(true);
+      $('#rw-other-on').addEventListener('change', (e) => {
+        const i = $('#rw-other'); i.hidden = !e.target.checked; i.required = e.target.checked;
+        if (e.target.checked) i.focus();
+      });
+    },
+    async onSubmit(f){
+      const pk = readPk();
+      const otherOn = $('#rw-other-on').checked;
+      const rw = { gold:intField(f.gold, '보수'), less:intField(f.less, '부족할 때 금액'), more:intField(f.more, '초과할 때 금액'),
+                   other: otherOn ? (f.other || '').trim() : '' };
+      if (otherOn && !rw.other) throw new Error('다른 보수 내용을 적어 주세요.');
+      const row = { board:'request', title:pkTitle(pk), body:(f.body || '').trim(), meta:{ pk, reward:rw } };
+      const closes = a.admin ? readDeadline(f) : null;
+      if (closes) row.closes_at = closes;
+      const post = await S.api.createPost(row);
+      S.api.notify('post', post.id);
+      toast(a.admin ? '의뢰를 올렸어요.' : '의뢰를 올렸어요. 7일 뒤 자동으로 마감돼요.');
+      renderView();
+    },
+  });
+}
+
 /* =====================================================================
    동작
    ===================================================================== */
@@ -930,21 +1351,26 @@ const ACTIONS = {
   'exit-demo'(){ location.href = location.pathname; },
   'rocket-tab'(d){ S.rocketTab = d.tab; renderView(); },
 
-  write(d){
+  async write(d){
     const B = BOARDS[d.board];
+    if (d.board === 'request') return writeRequest();
     const extra = B.fields.map(f => `<div class="field"><label>${esc(f.label)}</label>
-      <input class="input" name="m_${f.k}" placeholder="${esc(f.ph)}" ${f.type === 'number' ? 'inputmode="numeric"' : ''} maxlength="60"></div>`).join('');
+      <input class="input" name="m_${f.k}" placeholder="${esc(f.ph)}" ${f.type === 'number' ? 'type="number" min="1" inputmode="numeric"' : 'maxlength="60"'}></div>`).join('');
     openForm({
       title: d.board === 'notice' ? '공지 쓰기' : `${B.name} 글쓰기`,
       sub: d.board === 'notice' ? '' : '올리면 디스코드 알림 채널에도 소식이 올라가요.',
       html: `<div class="field"><label>제목</label><input class="input" name="title" maxlength="80" required></div>
         ${extra}
+        ${B.deadline ? deadlineField() : ''}
         <div class="field"><label>내용</label><textarea class="input" name="body" maxlength="2000" placeholder="자세한 내용 (선택)"></textarea></div>`,
       submit: '올리기',
       async onSubmit(f){
         const meta = {};
         B.fields.forEach(x => { const v = (f[`m_${x.k}`] || '').trim(); if (v) meta[x.k] = v; });
-        const post = await S.api.createPost({ board:d.board, title:f.title.trim(), body:(f.body || '').trim(), meta });
+        const row = { board:d.board, title:f.title.trim(), body:(f.body || '').trim(), meta };
+        const closes = readDeadline(f);
+        if (closes) row.closes_at = closes;
+        const post = await S.api.createPost(row);
         S.api.notify('post', post.id);
         toast('글을 올렸어요.');
         renderView();
@@ -972,6 +1398,18 @@ const ACTIONS = {
     if (!await ask('신청 취소', '이 신청을 취소할까요?', '취소하기', true)) return;
     await S.api.deleteEntry(Number(d.id)); toast('신청을 취소했어요.'); renderView();
   },
+  'post-deadline'(d){
+    openForm({
+      title: '신청 마감 시각',
+      sub: '정한 시각이 지나면 자동으로 신청이 닫혀요. 비워 두면 직접 마감할 때까지 열려 있어요.',
+      html: deadlineField(),
+      submit: '저장',
+      async onSubmit(f){
+        await S.api.updatePost(Number(d.id), { closes_at:readDeadline(f), status:'open' });
+        toast('마감 시각을 저장했어요.'); renderView();
+      },
+    });
+  },
   async 'post-status'(d){
     await S.api.setPostStatus(Number(d.id), d.status);
     toast(d.status === 'closed' ? '마감했어요.' : '다시 열었어요.'); renderView();
@@ -981,19 +1419,34 @@ const ACTIONS = {
     await S.api.deletePost(Number(d.id)); toast('삭제했어요.'); renderView();
   },
 
-  'new-listing'(d){
+  async 'new-listing'(d){
+    try { await loadDex(); } catch (e) { return toast(e.message, 'err'); }
     const have = d.kind === 'have';
     openForm({
       title: have ? '보유 포켓몬 올리기' : '필요한 포켓몬 올리기',
-      sub: have ? '단원들이 "받을게요"로 예약할 수 있어요.' : '단원들이 "줄게요"로 예약할 수 있어요.',
-      html: `<div class="field"><label>포켓몬</label><input class="input" name="pokemon" maxlength="40" required placeholder="예: 메타몽"></div>
-        <div class="field"><label>정보</label><textarea class="input" name="details" maxlength="500" placeholder="레벨, 성격, 특성, 개체값, 이로치 여부 등"></textarea></div>`,
+      sub: have ? '줄 수 있는 포켓몬의 정확한 정보를 적어 주세요. 단원들이 "받을게요"로 예약할 수 있어요.'
+                : '원하는 조건을 골라 주세요. 상관없는 항목은 "상관없음"으로 두면 돼요. 단원들이 "줄게요"로 예약할 수 있어요.',
+      wide: true,
+      html: pkEditorHtml(!have) + `<div class="field"><label>추가 정보 (선택)</label><textarea class="input" name="details" maxlength="500" placeholder="레벨, 기술, 거래 장소 등"></textarea></div>`,
       submit: '올리기',
+      onOpen(){ bindPkEditor(!have); },
       async onSubmit(f){
-        await S.api.createListing({ kind:d.kind, pokemon:f.pokemon.trim(), details:(f.details || '').trim() });
+        const pk = readPk();
+        await S.api.createListing({ kind:d.kind, pokemon:pkTitle(pk), details:(f.details || '').trim(), meta:{ pk } });
         toast('올렸어요.'); renderView();
       },
     });
+  },
+  'pk-pick'(d){ pickPk(d.id); },
+  'pk-change'(){ $('#pk-picked').hidden = true; $('#pk-search').hidden = false; const q = $('#pk-q'); q.value = ''; q.focus(); },
+  'iv-all'(d){
+    STATS.forEach(x => {
+      const any = d.v === 'any';
+      const c = $(`#mform [data-ivany="${x.k}"]`);
+      if (c) { c.checked = any; c.closest('.iv-row').classList.toggle('any', any); }
+      if (!any) { $(`#mform [data-iv="${x.k}"]`).value = d.v; $(`#mform [data-ivn="${x.k}"]`).value = d.v; }
+    });
+    drawPkHex();
   },
   reserve(d){
     const card = document.querySelector(`[data-act="reserve"][data-id="${d.id}"]`).closest('.card');

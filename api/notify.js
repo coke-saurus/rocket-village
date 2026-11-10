@@ -11,6 +11,33 @@ const BOARD = {
   pvp: '⚔️ PVP 대회',
   auction: '💰 경매 모집',
 };
+const STATS = [['hp', '체력'], ['atk', '공격'], ['def', '방어'], ['spa', '특공'], ['spd', '특방'], ['spe', '스피드']];
+const won = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+// 포켓몬 정보 → 디스코드 필드
+function pkFields(pk) {
+  if (!pk) return [];
+  const iv = STATS.map(([k, n]) => {
+    const v = pk.ivs?.[k];
+    const mark = pk.nature?.up === k ? '▲' : pk.nature?.dn === k ? '▼' : '';
+    return `${n}${mark} ${v == null ? '－' : v}`;
+  }).join(' · ');
+  return [
+    { name: '포켓몬', value: clip(`${pk.shiny ? '✨ 이로치 ' : ''}${pk.name}`, 200), inline: true },
+    { name: '특성', value: pk.ability ? `${pk.ability.n}${pk.ability.hidden ? ' (숨겨진 특성)' : ''}` : '상관없음', inline: true },
+    { name: '성격', value: pk.nature?.n || '상관없음', inline: true },
+    { name: '개체값', value: clip(iv, 1000) },
+  ];
+}
+function rewardText(r) {
+  if (!r) return null;
+  const parts = [`${won(r.gold)} 골드`];
+  if (r.less) parts.push(`1 부족당 -${won(r.less)}`);
+  if (r.more) parts.push(`1 초과당 +${won(r.more)}`);
+  return parts.join(' · ') + (r.other ? `\n+ ${r.other}` : '');
+}
+const ts = (iso) => `<t:${Math.floor(new Date(iso).getTime() / 1000)}:f> (<t:${Math.floor(new Date(iso).getTime() / 1000)}:R>)`;
+
 const META_LABEL = {
   pokemon: '필요한 포켓몬', reward: '보상',
   when: '일시', rules: '규칙', capacity: '정원',
@@ -47,9 +74,15 @@ async function onPost(user, id) {
   if (post.author_id !== user.id) throw httpError(403, '본인 글만 알릴 수 있습니다');
   if (!(await claimNotify('posts', id))) return { skipped: true };
 
-  const fields = Object.entries(post.meta || {})
-    .filter(([, v]) => v !== '' && v != null)
-    .map(([k, v]) => ({ name: META_LABEL[k] || k, value: clip(v, 1000), inline: true }));
+  const meta = post.meta || {};
+  const fields = [
+    ...pkFields(meta.pk),
+    ...(meta.reward ? [{ name: '보수', value: clip(rewardText(meta.reward), 1000) }] : []),
+    ...Object.entries(meta)
+      .filter(([, v]) => v !== '' && v != null && typeof v !== 'object')
+      .map(([k, v]) => ({ name: META_LABEL[k] || k, value: clip(v, 1000), inline: true })),
+    ...(post.closes_at ? [{ name: post.board === 'request' ? '자동 마감' : '신청 마감', value: ts(post.closes_at) }] : []),
+  ];
 
   const channel = await postChannel({
     embeds: [{
@@ -58,6 +91,7 @@ async function onPost(user, id) {
       url: siteUrl() ? `${siteUrl()}/#${post.board}` : undefined,
       color: RED,
       fields,
+      thumbnail: meta.pk?.icon ? { url: meta.pk.icon } : undefined,
       footer: { text: `작성자 ${post.author?.mc_name || post.author?.discord_name || ''}` },
       timestamp: post.created_at,
     }],
@@ -94,7 +128,7 @@ async function onEntry(user, id) {
 // 로켓단 거래 예약 → 두 사람 모두에게 DM
 async function onReservation(user, id) {
   const [r] = await db(
-    `rocket_reservations?id=eq.${id}&select=*,listing:rocket_listings(id,kind,pokemon,details,author_id),requester:profiles(mc_name,discord_name,discord_id)`,
+    `rocket_reservations?id=eq.${id}&select=*,listing:rocket_listings(id,kind,pokemon,details,author_id,meta),requester:profiles(mc_name,discord_name,discord_id)`,
   );
   if (!r) throw httpError(404, '예약을 찾을 수 없습니다');
   if (r.requester_id !== user.id) throw httpError(403, '본인 예약만 알릴 수 있습니다');
@@ -110,12 +144,13 @@ async function onReservation(user, id) {
     color: RED,
     url: siteUrl() ? `${siteUrl()}/#rocket` : undefined,
     fields: [
-      { name: '포켓몬', value: clip(r.listing.pokemon, 200), inline: true },
+      ...(r.listing.meta?.pk ? pkFields(r.listing.meta.pk) : [{ name: '포켓몬', value: clip(r.listing.pokemon, 200), inline: true }]),
       { name: '주는 사람', value: who(giver), inline: true },
       { name: '받는 사람', value: who(receiver), inline: true },
       { name: `${r.requester?.mc_name || '신청자'}님이 전할 말`, value: clip(r.message, 1000) },
       ...(r.listing.details ? [{ name: '포켓몬 정보', value: clip(r.listing.details, 1000) }] : []),
     ],
+    thumbnail: r.listing.meta?.pk?.icon ? { url: r.listing.meta.pk.icon } : undefined,
     footer: { text: '시간이 안 맞으면 디스코드로 직접 조율해 주세요 · 거래가 끝나면 사이트에서 완료를 눌러주세요' },
     timestamp: r.created_at,
   };
