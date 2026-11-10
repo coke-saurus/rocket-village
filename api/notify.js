@@ -33,9 +33,9 @@ function pkFields(pk) {
 function rewardText(r, pk) {
   if (!r) return null;
   const lines = [`${won(r.gold)} 골드`];
-  const iv = [r.strict ? '타협 불가' : r.less ? `1 부족당 -${won(r.less)} 골드` : '', r.more ? `1 초과당 +${won(r.more)} 골드` : ''].filter(Boolean);
+  const iv = [r.strict ? '타협 불가' : r.less ? `${won(r.less)} 골드/-1` : '', r.more ? `${won(r.more)} 골드/+1` : ''].filter(Boolean);
   if (iv.length) lines.push(`요구 개체값: ${iv.join(' · ')}`);
-  if (pk?.level && (r.lvStrict || r.lvLess)) lines.push(`레벨(최대 Lv.${pk.level}): ${r.lvStrict ? '타협 불가' : `1 부족당 -${won(r.lvLess)} 골드`}`);
+  if (pk?.level && (r.lvStrict || r.lvLess)) lines.push(`레벨(최대 Lv.${pk.level}): ${r.lvStrict ? '타협 불가' : `${won(r.lvLess)} 골드/-1`}`);
   if (r.other) lines.push(`+ ${r.other}`);
   return lines.join('\n');
 }

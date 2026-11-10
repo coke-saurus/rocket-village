@@ -281,6 +281,8 @@ textarea.input{min-height:90px;resize:vertical}
 .reward .line{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font:600 12.5px var(--mono);color:#efe3bf}
 .reward .line em{font:500 12px 'Pretendard Variable',sans-serif;font-style:normal;color:#b9ab84;margin-right:4px}
 .reward .line i{font-style:normal;color:#8d8366}
+.reward .line .per{white-space:nowrap}
+.reward .line small{font:600 11.5px var(--mono);color:#b9ab84;margin-left:1px}
 .reward .line .gold-icon{width:14px;height:14px;vertical-align:-2px;margin:0 2px}
 .reward .strict{color:#ff5a5f;font:700 12.5px 'Pretendard Variable',sans-serif}
 .lv-row{display:flex;align-items:center;gap:8px}
@@ -675,11 +677,11 @@ function pkView(pk){
 }
 function rewardView(r, pk){
   if (!r) return '';
-  const coin = (sign, n) => `${sign}${GOLD}${won(n)}`;
+  const per = (n, step) => `<span class="per">${GOLD}${won(n)}<small>/${step}</small></span>`;
   const strict = '<b class="strict">타협 불가</b>';
   const hasIv = !pk || STATS.some(x => pk.ivs?.[x.k] != null);
-  const ivParts = [r.strict ? strict : r.less ? `1 부족당 ${coin('−', r.less)}` : '', r.more ? `1 초과당 ${coin('+', r.more)}` : ''].filter(Boolean);
-  const lvParts = pk?.level ? [r.lvStrict ? strict : r.lvLess ? `1 부족당 ${coin('−', r.lvLess)}` : ''].filter(Boolean) : [];
+  const ivParts = [r.strict ? strict : r.less ? per(r.less, '−1') : '', r.more ? per(r.more, '+1') : ''].filter(Boolean);
+  const lvParts = pk?.level ? [r.lvStrict ? strict : r.lvLess ? per(r.lvLess, '−1') : ''].filter(Boolean) : [];
   const line = (label, parts) => parts.length ? `<span class="line"><em>${label}</em>${parts.join('<i>·</i>')}</span>` : '';
   return `<div class="reward"><span class="g">${GOLD}${won(r.gold)}</span>
     ${hasIv ? line('요구 개체값', ivParts) : ''}
