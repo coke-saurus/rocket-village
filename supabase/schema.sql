@@ -359,7 +359,7 @@ create policy rocket_reservations_update on public.rocket_reservations
   with check (true);
 
 -- ---------------------------------------------------------------------
--- 9. 글 규칙 (포켓몬 의뢰 7일 마감·1인 1의뢰, 마감 시각)
+-- 9. 글 규칙 (포켓몬 의뢰 7일 마감·1인 1의뢰, PVP·경매 기본 7일 마감, 마감 시각)
 -- ---------------------------------------------------------------------
 --    - 포켓몬 의뢰(관리자 제외): 7일 뒤 자동 마감, 모집 중인 의뢰는 1인 1개, 마감 후 다시 열기 불가
 --    - 마감 시각은 지금보다 뒤여야 함
@@ -381,6 +381,10 @@ begin
       end if;
       new.closes_at := now() + interval '7 days';
     end if;
+    -- PVP 대회 · 경매: 마감 시각을 비워 두면 7일 뒤 자동 마감 (관리자 포함)
+    if new.board in ('pvp', 'auction') and new.closes_at is null then
+      new.closes_at := now() + interval '7 days';
+    end if;
     if new.closes_at is not null and new.closes_at <= now() then
       raise exception '마감 시각은 지금보다 뒤여야 해요.';
     end if;
@@ -392,6 +396,13 @@ begin
     new.closes_at := old.closes_at;
     if new.status = 'open' and old.status <> 'open' then
       raise exception '마감된 의뢰는 다시 열 수 없어요. 새 의뢰를 올려 주세요.';
+    end if;
+  end if;
+  if old.board in ('pvp', 'auction') and new.closes_at is distinct from old.closes_at then
+    if new.closes_at is null then
+      new.closes_at := now() + interval '7 days';
+    elsif new.closes_at <= now() then
+      raise exception '마감 시각은 지금보다 뒤여야 해요.';
     end if;
   end if;
   return new;

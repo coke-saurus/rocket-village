@@ -172,6 +172,8 @@ textarea.input{min-height:90px;resize:vertical}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .field label{font-size:13px;font-weight:600;color:#c9c7d3}
 .hint{font-size:12px;color:var(--muted)}
+.hint b{color:#d9d7e2;font-weight:600}
+.hint.lock{margin:0 0 12px;padding:8px 10px;border-radius:8px;background:var(--bg2);border:1px solid var(--line);font-size:13px;color:#c9c7d3}
 .field .hint{font-size:12px;color:var(--muted)}
 .res{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
 .res .dir{font:700 11px/1 var(--mono);letter-spacing:.1em;padding:6px 8px;border-radius:6px;background:var(--redbg);color:var(--red2);text-align:center}
@@ -251,8 +253,9 @@ textarea.input{min-height:90px;resize:vertical}
 .hx-ring{fill:none;stroke:#55555d;stroke-width:1.6}
 .hx-axis{stroke:#3d3d44;stroke-width:1}
 .hx-fill{fill:rgba(56,182,214,.78);stroke:#5fd0ea;stroke-width:1.5;stroke-linejoin:round}
-.hx-line{fill:none;stroke:#5fd0ea;stroke-width:3;stroke-linecap:round}
+.hx-line{fill:none;stroke:#5fd0ea;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
 .hx-dot{fill:#bdf2ff}
+.hx-center{fill:#7fd6ea}
 .hx-lb{font:600 13px 'Pretendard Variable',sans-serif;fill:#e8e8ee}
 .hx-val{font:700 13px 'JetBrains Mono',monospace;fill:#fff}
 .hx-val.any{fill:#77777f}
@@ -394,7 +397,8 @@ function leftText(iso){
   if (s <= 0) return '마감';
   if (s < 3600) return `${Math.max(1, Math.floor(s/60))}분 남음`;
   if (s < 86400) return `${Math.floor(s/3600)}시간 남음`;
-  return `${Math.floor(s/86400)}일 남음`;
+  const d = Math.floor(s/86400), h = Math.floor((s % 86400) / 3600);
+  return h ? `${d}일 ${h}시간 남음` : `${d}일 남음`;
 }
 const WD = ['일','월','화','수','목','금','토'];
 function fmtDate(iso){
@@ -446,9 +450,33 @@ function hexSvg(ivs, nature, { labels=true } = {}){
   const ring = (r) => STATS.map((_, i) => P(pt(i, r))).join(' ');
   let out = [1, 2/3, 1/3].map(f => `<polygon class="hx-ring" points="${ring(R*f)}"/>`).join('');
   out += STATS.map((_, i) => `<line class="hx-axis" x1="${cx}" y1="${cy}" x2="${pt(i,R)[0].toFixed(1)}" y2="${pt(i,R)[1].toFixed(1)}"/>`).join('');
-  const pts = STATS.map((x, i) => ivs?.[x.k] == null ? null : pt(i, R * Math.max(.05, ivs[x.k] / 31))).filter(Boolean);
-  if (pts.length >= 3) out += `<polygon class="hx-fill" points="${pts.map(P).join(' ')}"/>`;
-  else if (pts.length === 2) out += `<polyline class="hx-line" points="${pts.map(P).join(' ')}"/>`;
+  // 정한 능력치는 꼭짓점, 상관없음인 자리는 정가운데 점으로 이어서 그림
+  const set = STATS.map((x, i) => ivs?.[x.k] == null ? null : i);
+  const given = set.filter(i => i !== null);
+  const pts = given.map(i => pt(i, R * Math.max(.05, ivs[STATS[i].k] / 31)));
+  if (given.length) {
+    const ring = [];
+    STATS.forEach((x, i) => {
+      const p = set[i] === null ? [cx, cy] : pts[given.indexOf(i)];
+      const last = ring[ring.length - 1];
+      if (!(last && last[0] === p[0] && last[1] === p[1])) ring.push(p);
+    });
+    if (ring.length > 1 && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1]) ring.pop();
+    const area = (r) => Math.abs(r.reduce((a, p, i) => { const q = r[(i + 1) % r.length]; return a + p[0]*q[1] - q[0]*p[1]; }, 0)) / 2;
+    // 하나씩 건너뛰어 정하면(예: 체력·방어·특수방어) 가운데를 오가며 면적이 사라지므로 정한 점끼리만 이음
+    const useRing = !(given.length >= 3 && area(ring) < R * R * 0.05);
+    const shape = useRing ? ring : pts;
+    // 1개만 정했거나 정반대 두 개만 정하면 면적이 없어 굵은 선으로 표시
+    const flat = given.length === 1 || (given.length === 2 && given[1] - given[0] === 3);
+    out += flat ? `<polyline class="hx-line" points="${shape.map(P).join(' ')} ${P(shape[0])}"/>`
+                : `<polygon class="hx-fill" points="${shape.map(P).join(' ')}"/>`;
+    // 양옆이 모두 상관없음인 꼭짓점은 가운데와 잇는 선이 얇아 보이므로 굵게 표시
+    if (useRing && !flat) given.forEach((i, n) => {
+      if (set[(i + 5) % 6] === null && set[(i + 1) % 6] === null)
+        out += `<line class="hx-line" x1="${cx}" y1="${cy}" x2="${pts[n][0].toFixed(1)}" y2="${pts[n][1].toFixed(1)}"/>`;
+    });
+    if (given.length < 6 && useRing) out += `<circle class="hx-dot hx-center" cx="${cx}" cy="${cy}" r="${labels ? 2.4 : 1.8}"/>`;
+  }
   out += pts.map(p => `<circle class="hx-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${labels ? 3 : 2.4}"/>`).join('');
   if (labels) {
     STATS.forEach((x, i) => {
@@ -817,6 +845,7 @@ function makeDemoApi(){
         if (D.posts.some(p => p.board === 'request' && p.author_id === me && isOpen(p))) throw new Error('이미 모집 중인 포켓몬 의뢰가 있어요. 기존 의뢰가 마감된 뒤에 올릴 수 있어요.');
         d = { ...d, closes_at:new Date(Date.now() + 7*86400e3).toISOString() };
       }
+      if ((d.board === 'pvp' || d.board === 'auction') && !d.closes_at) d = { ...d, closes_at:new Date(Date.now() + 7*86400e3).toISOString() };
       const p = { id:++seq, closes_at:null, ...d, status:'open', author_id:me, created_at:nowIso() }; D.posts.push(p); return p;
     },
     async setPostStatus(id, s){
@@ -824,7 +853,11 @@ function makeDemoApi(){
       if (p.board === 'request' && !access(prof(meId())).admin && s === 'open' && p.status !== 'open') throw new Error('마감된 의뢰는 다시 열 수 없어요. 새 의뢰를 올려 주세요.');
       p.status = s;
     },
-    async updatePost(id, patch){ Object.assign(byId(D.posts, id), patch); },
+    async updatePost(id, patch){
+      const p = byId(D.posts, id);
+      if ((p.board === 'pvp' || p.board === 'auction') && 'closes_at' in patch && !patch.closes_at) patch = { ...patch, closes_at:new Date(Date.now() + 7*86400e3).toISOString() };
+      Object.assign(p, patch);
+    },
     async deletePost(id){ D.posts = D.posts.filter(p => p.id !== id); D.entries = D.entries.filter(e => e.post_id !== id); },
     async createEntry(post_id, message){ if (D.entries.some(e => e.post_id === post_id && e.user_id === meId())) throw new Error('이미 처리된 요청이에요.'); const e = { id:++seq, post_id, user_id:meId(), message, created_at:nowIso() }; D.entries.push(e); return e; },
     async deleteEntry(id){ D.entries = D.entries.filter(e => e.id !== id); },
@@ -1272,10 +1305,12 @@ function viewMe(){
 
 
 /* ---------- 포켓몬 의뢰 글쓰기 ---------- */
-function deadlineField(){
+function deadlineField(adminRequest=false){
   return `<div class="field"><label>신청 마감 시각 (선택)</label>
     <input type="datetime-local" class="input" name="closes_at" min="${localInputValue(new Date())}">
-    <span class="hint">정한 시각이 지나면 마감 버튼을 누르지 않아도 자동으로 신청이 닫혀요. 비워 두면 직접 마감해요.</span></div>`;
+    <span class="hint">${adminRequest
+      ? '정한 시각이 지나면 자동으로 마감돼요. 비워 두면 직접 마감할 때까지 열려 있어요. (관리자 의뢰)'
+      : '정한 시각이 지나면 마감 버튼을 누르지 않아도 자동으로 신청이 닫혀요. <b>비워 두면 일주일 뒤 자동으로 마감돼요.</b>'}</span></div>`;
 }
 function readDeadline(f){
   if (!f.closes_at) return null;
@@ -1312,8 +1347,8 @@ async function writeRequest(){
     title: '포켓몬 의뢰하기',
     sub: a.admin ? '관리자 의뢰는 자동 마감과 개수 제한이 없어요.' : '올리면 7일 뒤 자동으로 마감돼요. 모집 중인 의뢰는 한 사람당 하나만 올릴 수 있어요.',
     wide: true,
-    html: pkEditorHtml(true) + reward + (a.admin ? deadlineField() : '')
-      + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="레벨, 거래 장소, 기한 등"></textarea></div>`,
+    html: pkEditorHtml(true) + reward + (a.admin ? deadlineField(true) : '<p class="hint lock">🔒 올린 뒤 일주일이 지나면 자동으로 마감돼요.</p>')
+      + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="예: 주로 저녁 8~11시 접속 · 레벨 무관 · 마을 창고 앞에서 거래"></textarea></div>`,
     submit: '의뢰 올리기',
     onOpen(){
       bindPkEditor(true);
@@ -1401,7 +1436,7 @@ const ACTIONS = {
   'post-deadline'(d){
     openForm({
       title: '신청 마감 시각',
-      sub: '정한 시각이 지나면 자동으로 신청이 닫혀요. 비워 두면 직접 마감할 때까지 열려 있어요.',
+      sub: '정한 시각이 지나면 자동으로 신청이 닫혀요. 비워 두면 지금부터 일주일 뒤 자동으로 마감돼요.',
       html: deadlineField(),
       submit: '저장',
       async onSubmit(f){
@@ -1427,7 +1462,7 @@ const ACTIONS = {
       sub: have ? '줄 수 있는 포켓몬의 정확한 정보를 적어 주세요. 단원들이 "받을게요"로 예약할 수 있어요.'
                 : '원하는 조건을 골라 주세요. 상관없는 항목은 "상관없음"으로 두면 돼요. 단원들이 "줄게요"로 예약할 수 있어요.',
       wide: true,
-      html: pkEditorHtml(!have) + `<div class="field"><label>추가 정보 (선택)</label><textarea class="input" name="details" maxlength="500" placeholder="레벨, 기술, 거래 장소 등"></textarea></div>`,
+      html: pkEditorHtml(!have) + `<div class="field"><label>추가 정보 (선택)</label><textarea class="input" name="details" maxlength="500" placeholder="예: 주로 저녁 8~11시 접속 · Lv.50 · 기술 구성 등"></textarea></div>`,
       submit: '올리기',
       onOpen(){ bindPkEditor(!have); },
       async onSubmit(f){

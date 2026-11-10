@@ -1,5 +1,5 @@
 -- =====================================================================
---  업데이트 002 · 포켓몬 상세 정보, 자동 마감 시각, 의뢰 제한
+--  업데이트 002 · 포켓몬 상세 정보, 자동 마감 시각(PVP·경매 기본 7일), 의뢰 제한
 --  Supabase > SQL Editor 에 전체를 붙여넣고 Run 하세요.
 --  기존 글과 회원 정보는 그대로 유지되며, 여러 번 실행해도 안전합니다.
 -- =====================================================================
@@ -16,6 +16,7 @@ grant update (pokemon, details, status, meta) on public.rocket_listings to authe
 
 -- 3) 글 규칙
 --    - 포켓몬 의뢰(관리자 제외): 7일 뒤 자동 마감, 모집 중인 의뢰는 1인 1개, 마감 후 다시 열기 불가
+--    - PVP 대회 · 경매: 마감 시각을 비워 두면 7일 뒤 자동 마감
 --    - 마감 시각은 지금보다 뒤여야 함
 create or replace function public.guard_post()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -35,6 +36,10 @@ begin
       end if;
       new.closes_at := now() + interval '7 days';
     end if;
+    -- PVP 대회 · 경매: 마감 시각을 비워 두면 7일 뒤 자동 마감 (관리자 포함)
+    if new.board in ('pvp', 'auction') and new.closes_at is null then
+      new.closes_at := now() + interval '7 days';
+    end if;
     if new.closes_at is not null and new.closes_at <= now() then
       raise exception '마감 시각은 지금보다 뒤여야 해요.';
     end if;
@@ -46,6 +51,13 @@ begin
     new.closes_at := old.closes_at;
     if new.status = 'open' and old.status <> 'open' then
       raise exception '마감된 의뢰는 다시 열 수 없어요. 새 의뢰를 올려 주세요.';
+    end if;
+  end if;
+  if old.board in ('pvp', 'auction') and new.closes_at is distinct from old.closes_at then
+    if new.closes_at is null then
+      new.closes_at := now() + interval '7 days';
+    elsif new.closes_at <= now() then
+      raise exception '마감 시각은 지금보다 뒤여야 해요.';
     end if;
   end if;
   return new;
@@ -65,3 +77,8 @@ create policy entries_insert on public.entries
               and exists (select 1 from public.posts p
                           where p.id = post_id and p.status = 'open' and p.board <> 'notice'
                             and (p.closes_at is null or p.closes_at > now())));
+
+-- 5) 이미 올라와 있는 PVP 대회 · 경매 글 중 마감 시각이 없는 글은 지금부터 7일 뒤로 맞춤
+update public.posts
+   set closes_at = now() + interval '7 days'
+ where board in ('pvp', 'auction') and status = 'open' and closes_at is null;
