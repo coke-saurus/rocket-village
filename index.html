@@ -412,7 +412,7 @@ function avatar(p){
   const ch = (p?.mc_name || p?.discord_name || '?').trim().charAt(0).toUpperCase();
   return `<span class="av">${esc(ch)}</span>`;
 }
-const nameOf = (p) => p?.mc_name || p?.discord_name || '알 수 없음';
+const nameOf = (p) => p ? (p.mc_name || p.discord_name || '이름 없음') : '탈퇴한 회원';
 function toast(msg, kind=''){
   const el = document.createElement('div');
   el.className = `toast ${kind}`; el.textContent = msg;
@@ -821,6 +821,9 @@ function makeSupaApi(){
     listProfiles(){ return run(sb.from('profiles').select('*').order('created_at', { ascending:true })); },
     async fixedAdmins(){ return (await run(sb.from('fixed_admins').select('mc_name'))).map(r => r.mc_name); },
     updateProfile(id, patch){ return run(sb.from('profiles').update(patch).eq('id', id)); },
+    deleteMember(id, ban, reason){ return call('/api/admin-member', { action:'delete', id, ban, reason }); },
+    unban(discord_id){ return call('/api/admin-member', { action:'unban', discord_id }); },
+    listBanned(){ return run(sb.from('banned_users').select('*').order('created_at', { ascending:false })); },
     async notify(type, id){ try { return await call('/api/notify', { type, id }); } catch (e) { return { ok:false, error:e.message }; } },
     async msStart(){ const j = await call('/api/ms-start'); location.href = j.url; },
   };
@@ -834,6 +837,7 @@ function makeDemoApi(){
   const demoPk = (id, name, shiny, ability, nature, ivs) => ({ id, name, shiny, icon:spriteUrl(id, shiny), ability, nature, ivs });
   const D = {
     fixed:['RKT_Boss'],
+    banned:[{ discord_id:'900000000000000001', name:'Scam_Trader', reason:'거래 사기', created_at:new Date(Date.now() - 3*86400e3).toISOString() }],
     profiles:[
       { id:'u1', discord_id:'1', discord_name:'보스', mc_name:'RKT_Boss', mc_verified:true, mc_verified_via:'admin', role:'member', created_at:t(900) },
       { id:'u2', discord_id:'2', discord_name:'흑장미', mc_name:'BlackTulip', mc_verified:true, mc_verified_via:'microsoft', role:'rocket', created_at:t(700) },
@@ -873,9 +877,13 @@ function makeDemoApi(){
   let role = 'new', loggedIn = false, seq = 100;
   const meId = () => ({ new:'u5', member:'u4', rocket:'u2', admin:'u1' })[role];
   const prof = (id) => D.profiles.find(p => p.id === id);
-  const pub = (p) => p && { id:p.id, mc_name:p.mc_name, discord_name:p.discord_name, discord_avatar:null };
+  const pub = (p) => p ? { id:p.id, mc_name:p.mc_name, discord_name:p.discord_name, discord_avatar:null } : null;
   const isFixed = (p) => !!p && p.mc_verified && D.fixed.some(f => f.toLowerCase() === String(p.mc_name).toLowerCase());
-  const access = (p) => { const fixed = isFixed(p), admin = fixed || p.role === 'admin'; return { fixed, admin, rocket: admin || p.role === 'rocket', verified: !!p.mc_verified }; };
+  const access = (p) => {
+    if (p.banned) return { fixed:false, admin:false, rocket:false, verified:false, banned:true };
+    const fixed = isFixed(p), admin = fixed || p.role === 'admin';
+    return { fixed, admin, rocket: admin || p.role === 'rocket', verified: !!p.mc_verified, banned:false };
+  };
   const newest = (a, b) => new Date(b.created_at) - new Date(a.created_at);
   const nowIso = () => new Date().toISOString();
   const pause = () => new Promise(r => setTimeout(r, 90));
@@ -887,7 +895,7 @@ function makeDemoApi(){
     onAuth(){},
     async login(){ await pause(); loggedIn = true; role = 'new'; toast('(데모) 디스코드 로그인 완료 — 처음 가입한 회원 시점이에요.'); },
     async logout(){ loggedIn = false; },
-    async me(){ if (!loggedIn) return null; const p = prof(meId()); return { ...p, acc:access(p) }; },
+    async me(){ if (!loggedIn) return null; const p = prof(meId()); if (!p) return null; return { ...p, acc:access(p) }; },
     async listPosts(boards, limit=60){
       await pause(); const bs = [].concat(boards);
       return D.posts.filter(p => bs.includes(p.board)).sort(newest).slice(0, limit).map(p => ({
@@ -941,6 +949,24 @@ function makeDemoApi(){
     async listProfiles(){ await pause(); return D.profiles.map(p => ({ ...p })); },
     async fixedAdmins(){ return D.fixed.slice(); },
     async updateProfile(id, patch){ const p = prof(id); Object.assign(p, patch); if ('mc_verified' in patch) p.mc_verified_via = patch.mc_verified ? 'admin' : null; },
+    async deleteMember(id, ban, reason){
+      await pause();
+      const me = prof(meId()), t = prof(id);
+      if (!t) throw new Error('이미 삭제된 회원이에요');
+      if (id === me.id) throw new Error('자기 자신은 삭제할 수 없어요');
+      if (isFixed(t)) throw new Error('고정 관리자는 삭제할 수 없어요');
+      if (t.role === 'admin' && !isFixed(me)) throw new Error('관리자는 고정 관리자만 삭제할 수 있어요');
+      D.posts.forEach(p => { if (p.author_id === id) { if (p.status === 'open') p.status = 'closed'; p.author_id = null; } });
+      D.listings.forEach(l => { if (l.author_id === id) { if (l.status === 'open') l.status = 'done'; l.author_id = null;
+        D.reservations.forEach(r => { if (r.listing_id === l.id && r.status === 'pending') r.status = 'cancelled'; }); } });
+      D.reservations.forEach(r => { if (r.requester_id === id) { if (r.status === 'pending') r.status = 'cancelled'; r.requester_id = null; } });
+      D.entries.forEach(e => { if (e.user_id === id) e.user_id = null; });
+      if (ban) D.banned.unshift({ discord_id:t.discord_id, name:t.mc_name || t.discord_name, reason:reason || null, created_at:nowIso() });
+      D.profiles = D.profiles.filter(p => p.id !== id);
+      return { ok:true, banned:!!ban };
+    },
+    async unban(did){ D.banned = D.banned.filter(b => b.discord_id !== did); D.profiles.forEach(p => { if (p.discord_id === did) p.banned = false; }); return { ok:true }; },
+    async listBanned(){ await pause(); return D.banned.map(b => ({ ...b })); },
     async notify(){ await pause(); return { ok:true, demo:true, dm:{ owner:true, requester:true, author:true } }; },
     async msStart(){
       const p = prof(meId());
@@ -959,6 +985,7 @@ const S = { api:null, me:null, rocketTab:'have', memberQuery:'' };
 const acc = () => S.me?.acc || {};
 
 function tabList(){
+  if (acc().banned) return [];
   const t = [['home','홈'],['request','포켓몬 의뢰'],['pvp','PVP 대회'],['auction','경매']];
   if (acc().rocket) t.push(['rocket','로켓단','rk']);
   if (acc().admin) t.push(['admin','관리자','ad']);
@@ -983,7 +1010,7 @@ function renderShell(){
   }
   const me = S.me, a = acc();
   $('#userbox').innerHTML = !me ? '' : `
-    ${a.fixed ? '<span class="chip gold">고정 관리자</span>' : a.admin ? '<span class="chip gold">관리자</span>' : a.rocket ? '<span class="chip red">로켓단</span>' : !a.verified ? '<span class="chip gold">미연동</span>' : ''}
+    ${a.banned ? '<span class="chip red">이용 정지</span>' : a.fixed ? '<span class="chip gold">고정 관리자</span>' : a.admin ? '<span class="chip gold">관리자</span>' : a.rocket ? '<span class="chip red">로켓단</span>' : !a.verified ? '<span class="chip gold">미연동</span>' : ''}
     <a class="who" href="#me">${avatar(me)}<span class="nm">${esc(nameOf(me))}</span></a>
     <button class="btn sm ghost" data-act="logout">로그아웃</button>`;
   const cur = currentTab();
@@ -994,6 +1021,13 @@ function renderShell(){
 async function renderView(){
   const v = $('#view');
   if (!S.me) { v.innerHTML = landing(); return; }
+  if (acc().banned) {
+    v.innerHTML = `<section class="gate" style="margin-top:40px">
+      <h2>이용이 정지된 계정이에요</h2>
+      <p>관리자가 이 디스코드 계정의 사이트 이용을 막았어요. 잘못된 조치라고 생각되면 디스코드에서 관리자에게 문의해 주세요.</p>
+      <button class="btn" data-act="logout">로그아웃</button></section>`;
+    return;
+  }
   const tab = currentTab();
   document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${tab}`));
   $('.tab.on')?.scrollIntoView({ block:'nearest', inline:'center' });
@@ -1144,7 +1178,7 @@ function postCard(p){
   const kvs = kvList.join('');
 
   let join = '';
-  if (open && !mine) {
+  if (open && !mine && p.author_id) {
     if (myEntry) join = `<button class="btn sm" data-act="leave" data-id="${myEntry.id}">신청 취소</button>`;
     else if (!a.verified) join = `<button class="btn sm" disabled>연동 후 신청</button>`;
     else if (full) join = `<button class="btn sm" disabled>정원 마감</button>`;
@@ -1208,7 +1242,7 @@ function listingCard(l){
   const myRes = res.find(r => r.requester_id === me.id && r.status === 'pending');
   const pending = res.filter(r => r.status === 'pending').length;
   let act = '';
-  if (open && !mine) {
+  if (open && !mine && l.author_id) {
     act = myRes ? `<button class="btn sm" disabled>예약함</button>`
       : `<button class="btn sm red" data-act="reserve" data-id="${l.id}">${l.kind === 'have' ? '받을게요' : '줄게요'}</button>`;
   }
@@ -1257,7 +1291,7 @@ function resRow(r){
 
 /* ---------- 관리자 ---------- */
 async function viewAdmin(){
-  const [profiles, fixed] = await Promise.all([S.api.listProfiles(), S.api.fixedAdmins()]);
+  const [profiles, fixed, bans] = await Promise.all([S.api.listProfiles(), S.api.fixedAdmins(), S.api.listBanned().catch(() => [])]);
   const fixedSet = new Set(fixed.map(f => f.toLowerCase()));
   const isFixed = (p) => p.mc_verified && fixedSet.has(String(p.mc_name || '').toLowerCase());
   const waiting = profiles.filter(p => p.mc_name && !p.mc_verified);
@@ -1280,23 +1314,32 @@ async function viewAdmin(){
     const verifyBtn = fx || !p.mc_name ? '' : p.mc_verified
       ? `<button class="btn sm ghost" data-act="verify" data-id="${p.id}" data-v="0">인증 해제</button>`
       : `<button class="btn sm red" data-act="verify" data-id="${p.id}" data-v="1">인증</button>`;
+    const canDel = !fx && p.id !== S.me.id && (p.role !== 'admin' || iAmFixed);
+    const delBtn = canDel ? `<button class="btn sm danger" data-act="member-del" data-id="${p.id}" data-name="${esc(p.mc_name || p.discord_name || '')}">삭제</button>` : '';
     return `<div class="mrow">
-      <div class="id">${avatar(p)}<div><b>${esc(p.discord_name || '(이름 없음)')} ${roleBadge(p, fx)}</b><small>가입 ${ago(p.created_at)}</small></div></div>
+      <div class="id">${avatar(p)}<div><b>${esc(p.discord_name || '(이름 없음)')} ${p.banned ? '<span class="chip red">이용 정지</span>' : roleBadge(p, fx)}</b><small>가입 ${ago(p.created_at)}</small></div></div>
       <div class="mc"><code>${esc(p.mc_name || '—')}</code>${status}</div>
-      <div class="ctl">${verifyBtn}${roleSel}</div>
+      <div class="ctl">${p.banned ? '' : verifyBtn + roleSel}${delBtn}</div>
     </div>`;
   };
 
   return `
   <div class="head"><div><div class="code">ADMIN · 관리자</div><h1>관리자 본부</h1>
-    <p>닉네임 인증, 로켓단·관리자 권한 부여를 여기서 해요. 글 삭제는 각 게시판의 삭제 버튼을 쓰세요.</p></div></div>
+    <p>닉네임 인증, 로켓단·관리자 권한 부여, 회원 삭제·차단을 여기서 해요. 글 삭제는 각 게시판의 삭제 버튼을 쓰세요.</p></div></div>
 
   ${waiting.length ? `<h2 class="sec">WAITING · 인증 대기 ${waiting.length}명</h2><div class="members">${waiting.map(row).join('')}</div>` : ''}
 
   <h2 class="sec">MEMBERS · 전체 회원 ${profiles.length}명</h2>
   <div class="toolbar"><input class="input" style="max-width:320px" placeholder="닉네임 또는 디스코드 이름 검색" value="${esc(S.memberQuery)}" data-act="member-search"></div>
   <div class="members" id="member-list">${list.map(row).join('') || '<div class="empty">검색 결과가 없어요.</div>'}</div>
-  ${iAmFixed ? '' : '<p class="muted" style="font-size:13px;margin-top:10px">관리자 권한을 주거나 빼는 건 고정 관리자만 할 수 있어요.</p>'}
+  ${iAmFixed ? '' : '<p class="muted" style="font-size:13px;margin-top:10px">관리자 권한을 주거나 빼는 것과 관리자 삭제는 고정 관리자만 할 수 있어요.</p>'}
+
+  <h2 class="sec">BANNED · 차단 목록 ${bans.length}명</h2>
+  ${bans.length ? `<div class="members">${bans.map(b => `<div class="mrow">
+      <div class="id"><span class="av">⛔</span><div><b>${esc(b.name || '(이름 없음)')}</b><small>차단 ${ago(b.created_at)} · 디스코드 ID ${esc(b.discord_id)}</small></div></div>
+      <div class="mc"><span class="muted" style="font-size:13px">${b.reason ? `사유: ${esc(b.reason)}` : '사유 없음'}</span></div>
+      <div class="ctl"><button class="btn sm ghost" data-act="unban" data-did="${esc(b.discord_id)}" data-name="${esc(b.name || '')}">차단 해제</button></div>
+    </div>`).join('')}</div>` : '<div class="empty">차단된 회원이 없어요.</div>'}
 
   <h2 class="sec">DISCORD · 알림 점검</h2>
   <div class="panel"><h3>디스코드 봇 연결 테스트</h3>
@@ -1595,6 +1638,33 @@ const ACTIONS = {
     toast(d.status === 'done' ? '완료했어요.' : '취소했어요.'); renderView();
   },
 
+  'member-del'(d){
+    const name = d.name || '이름 없음';
+    openForm({
+      title: '회원 삭제',
+      sub: `<b>${esc(name)}</b>님의 계정을 삭제해요. 쓴 글과 신청 기록은 남고 작성자는 "탈퇴한 회원"으로 바뀌어요. 진행 중이던 글은 마감되고 대기 중인 거래 예약은 취소돼요. 되돌릴 수 없어요.`,
+      html: `<div class="field"><label>확인을 위해 <b class="mono">${esc(name)}</b> 을(를) 그대로 입력해 주세요</label>
+          <input class="input mono" name="confirm" autocomplete="off" required></div>
+        <div class="field"><label class="check"><input type="checkbox" name="ban" id="del-ban"> 차단도 하기</label>
+          <span class="hint">같은 디스코드 계정으로 다시 로그인해도 사이트를 이용할 수 없어요. 차단 목록에서 언제든 풀 수 있어요.</span></div>
+        <div class="field" id="del-reason" hidden><label>차단 사유 (선택, 관리자만 보임)</label>
+          <input class="input" name="reason" maxlength="200" placeholder="예: 거래 사기"></div>`,
+      submit: '삭제',
+      danger: true,
+      onOpen(){ $('#del-ban').addEventListener('change', (e) => { $('#del-reason').hidden = !e.target.checked; }); },
+      async onSubmit(f){
+        if ((f.confirm || '').trim() !== name) throw new Error('입력한 이름이 달라요. 그대로 입력해 주세요.');
+        const ban = !!f.ban;
+        await S.api.deleteMember(d.id, ban, ban ? (f.reason || '').trim() : '');
+        toast(ban ? `${name}님을 삭제하고 차단했어요.` : `${name}님을 삭제했어요.`);
+        renderView();
+      },
+    });
+  },
+  async unban(d){
+    if (!await ask('차단 해제', `${d.name || '이 회원'}님의 차단을 풀까요? 다시 로그인하면 사이트를 이용할 수 있어요.`, '차단 해제')) return;
+    await S.api.unban(d.did); toast('차단을 풀었어요.'); renderView();
+  },
   async verify(d){
     try { await S.api.updateProfile(d.id, { mc_verified: d.v === '1' }); toast(d.v === '1' ? '인증했어요.' : '인증을 해제했어요.'); }
     catch (e) { toast(e.message, 'err'); }

@@ -14,6 +14,7 @@ api/notify.js        디스코드 알림 (DM, 채널)
 api/ms-start.js      Microsoft 로그인 시작
 api/ms-callback.js   Microsoft → 마인크래프트 닉네임 확인
 api/keepalive.js     Supabase 잠김 방지 (매일 자동 실행)
+api/admin-member.js  관리자: 회원 삭제 · 차단 해제
 vercel.json          매일 keepalive 실행 예약
 package.json         서버 함수 설정 (이미 있으면 "type": "module"만 추가)
 .vercelignore        아래 두 파일은 사이트에 공개하지 않음
@@ -29,7 +30,7 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 | 파일 | 내용 | 실행 |
 |---|---|---|
 | `supabase/migrations/002_pokemon_deadlines.sql` | 포켓몬 상세 정보, 자동 마감 시각(PVP·경매는 비워 두면 7일), 의뢰 7일 마감·1인 1의뢰 | Supabase → SQL Editor에 전체 붙여넣고 Run (여러 번 실행해도 안전) |
-| `supabase/migrations/003_admin_only_events.sql` | PVP 대회 · 경매 글은 관리자만 작성 | 위와 같음 |
+| `supabase/migrations/003_admin_only_events.sql` | PVP 대회 · 경매 글은 관리자만 작성, 회원 삭제(글은 '탈퇴한 회원'으로 유지) · 차단 | 위와 같음 |
 
 처음 설치하는 경우에는 아래 1단계의 `schema.sql`에 위 내용이 이미 들어 있으니 따로 실행하지 않아도 됩니다.
 

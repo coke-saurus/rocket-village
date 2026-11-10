@@ -28,8 +28,12 @@ create table if not exists public.profiles (
   mc_verified_via text,                       -- 'microsoft' | 'admin'
   role            text not null default 'member'
                   check (role in ('member', 'rocket', 'admin')),
+  banned          boolean not null default false,   -- 차단된 회원
   created_at      timestamptz not null default now()
 );
+alter table public.profiles add column if not exists banned boolean not null default false;
+
+
 -- 인증된 닉네임은 한 사람만 가질 수 있음
 create unique index if not exists profiles_verified_mc_name
   on public.profiles (lower(mc_name)) where mc_verified;
@@ -42,25 +46,25 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (
     select 1 from profiles p
     join fixed_admins f on lower(f.mc_name) = lower(p.mc_name)
-    where p.id = uid and p.mc_verified
+    where p.id = uid and p.mc_verified and not p.banned
   );
 $$;
 
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select role = 'admin' from profiles where id = auth.uid()), false)
+  select coalesce((select role = 'admin' and not banned from profiles where id = auth.uid()), false)
       or public.is_fixed_admin(auth.uid());
 $$;
 
 create or replace function public.is_rocket()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select role in ('rocket', 'admin') from profiles where id = auth.uid()), false)
+  select coalesce((select role in ('rocket', 'admin') and not banned from profiles where id = auth.uid()), false)
       or public.is_fixed_admin(auth.uid());
 $$;
 
 create or replace function public.is_verified()
 returns boolean language sql stable security definer set search_path = public as $$
-  select coalesce((select mc_verified from profiles where id = auth.uid()), false);
+  select coalesce((select mc_verified and not banned from profiles where id = auth.uid()), false);
 $$;
 
 create or replace function public.my_access()
@@ -69,9 +73,25 @@ returns json language sql stable security definer set search_path = public as $$
     'admin',    public.is_admin(),
     'rocket',   public.is_rocket(),
     'fixed',    public.is_fixed_admin(auth.uid()),
-    'verified', public.is_verified()
+    'verified', public.is_verified(),
+    'banned',   coalesce((select banned from profiles where id = auth.uid()), false)
   );
 $$;
+
+-- 차단 목록 (디스코드 계정 기준)
+create table if not exists public.banned_users (
+  discord_id  text primary key,
+  name        text,                 -- 차단할 때의 닉네임 (기록용)
+  reason      text,
+  banned_by   uuid references public.profiles(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+alter table public.banned_users enable row level security;
+revoke all on public.banned_users from anon, authenticated;
+grant select on public.banned_users to authenticated;
+drop policy if exists banned_read on public.banned_users;
+create policy banned_read on public.banned_users
+  for select to authenticated using (public.is_admin());
 
 -- ---------------------------------------------------------------------
 -- 3. 가입 시 프로필 생성 트리거
@@ -79,14 +99,15 @@ $$;
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, discord_id, discord_name, discord_avatar)
+  insert into public.profiles (id, discord_id, discord_name, discord_avatar, banned)
   values (
     new.id,
     new.raw_user_meta_data ->> 'provider_id',
     coalesce(new.raw_user_meta_data -> 'custom_claims' ->> 'global_name',
              new.raw_user_meta_data ->> 'full_name',
              new.raw_user_meta_data ->> 'name'),
-    new.raw_user_meta_data ->> 'avatar_url'
+    new.raw_user_meta_data ->> 'avatar_url',
+    exists (select 1 from public.banned_users b where b.discord_id = new.raw_user_meta_data ->> 'provider_id')
   )
   on conflict (id) do nothing;
   return new;
@@ -167,7 +188,7 @@ create table if not exists public.posts (
   body        text not null default '' check (char_length(body) <= 2000),
   meta        jsonb not null default '{}'::jsonb,
   status      text not null default 'open' check (status in ('open', 'closed')),
-  author_id   uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  author_id   uuid default auth.uid() references public.profiles(id) on delete set null,
   closes_at   timestamptz,                      -- 이 시각이 지나면 자동 마감
   notified_at timestamptz,
   created_at  timestamptz not null default now()
@@ -178,7 +199,7 @@ create index if not exists posts_board_created on public.posts (board, created_a
 create table if not exists public.entries (
   id          bigint generated always as identity primary key,
   post_id     bigint not null references public.posts(id) on delete cascade,
-  user_id     uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  user_id     uuid default auth.uid() references public.profiles(id) on delete set null,
   message     text not null default '' check (char_length(message) <= 300),
   notified_at timestamptz,
   created_at  timestamptz not null default now(),
@@ -195,19 +216,48 @@ create table if not exists public.rocket_listings (
   details    text not null default '' check (char_length(details) <= 500),
   meta       jsonb not null default '{}'::jsonb,   -- 포켓몬 상세 (특성, 성격, 개체값, 이로치)
   status     text not null default 'open' check (status in ('open', 'done')),
-  author_id  uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  author_id  uuid default auth.uid() references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
 create table if not exists public.rocket_reservations (
   id           bigint generated always as identity primary key,
   listing_id   bigint not null references public.rocket_listings(id) on delete cascade,
-  requester_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  requester_id uuid default auth.uid() references public.profiles(id) on delete set null,
   message      text not null check (char_length(message) between 1 and 300),
   status       text not null default 'pending' check (status in ('pending', 'done', 'cancelled')),
   notified_at  timestamptz,
   created_at   timestamptz not null default now()
 );
+
+-- 회원이 삭제돼도 글·신청·예약은 남기고 작성자만 비움 ('탈퇴한 회원'으로 표시)
+do $$
+declare r record;
+begin
+  for r in
+    select con.conname, rel.relname
+    from pg_constraint con
+    join pg_class rel on rel.oid = con.conrelid
+    join pg_namespace n on n.oid = rel.relnamespace
+    where n.nspname = 'public' and con.contype = 'f'
+      and con.confrelid = 'public.profiles'::regclass
+      and rel.relname in ('posts', 'entries', 'rocket_listings', 'rocket_reservations')
+  loop
+    execute format('alter table public.%I drop constraint %I', r.relname, r.conname);
+  end loop;
+end $$;
+alter table public.posts               alter column author_id    drop not null;
+alter table public.entries             alter column user_id      drop not null;
+alter table public.rocket_listings     alter column author_id    drop not null;
+alter table public.rocket_reservations alter column requester_id drop not null;
+alter table public.posts               add constraint posts_author_id_fkey
+  foreign key (author_id) references public.profiles(id) on delete set null;
+alter table public.entries             add constraint entries_user_id_fkey
+  foreign key (user_id) references public.profiles(id) on delete set null;
+alter table public.rocket_listings     add constraint rocket_listings_author_id_fkey
+  foreign key (author_id) references public.profiles(id) on delete set null;
+alter table public.rocket_reservations add constraint rocket_reservations_requester_id_fkey
+  foreign key (requester_id) references public.profiles(id) on delete set null;
 
 -- 예전에 만든 DB에도 새 칸이 생기도록
 alter table public.posts           add column if not exists closes_at timestamptz;
@@ -302,6 +352,7 @@ create policy entries_insert on public.entries
               and public.is_verified()
               and exists (select 1 from public.posts p
                           where p.id = post_id and p.status = 'open' and p.board <> 'notice'
+                            and p.author_id is not null
                             and (p.closes_at is null or p.closes_at > now())));
 
 drop policy if exists entries_delete on public.entries;

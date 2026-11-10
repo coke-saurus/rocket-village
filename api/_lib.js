@@ -16,7 +16,7 @@ export const GOLD = 0xf2c14e;
 export const siteUrl = () => (process.env.SITE_URL || '').replace(/\/$/, '');
 
 // ---------- Supabase (서비스 키로 접근, RLS 우회) ----------
-function serviceHeaders(extra = {}) {
+export function serviceHeaders(extra = {}) {
   const key = env('SUPABASE_SERVICE_ROLE_KEY');
   const h = { apikey: key, 'Content-Type': 'application/json', ...extra };
   // 예전 형식(JWT) 키는 Authorization 헤더도 필요, 새 형식(sb_secret_...)은 apikey 만
@@ -24,8 +24,9 @@ function serviceHeaders(extra = {}) {
   return h;
 }
 
-export async function db(path, { method = 'GET', body, returnRows = true } = {}) {
-  const prefer = method !== 'GET' && returnRows ? { Prefer: 'return=representation' } : {};
+export async function db(path, { method = 'GET', body, returnRows = true, prefer: extraPrefer } = {}) {
+  const pref = [method !== 'GET' && returnRows ? 'return=representation' : '', extraPrefer].filter(Boolean).join(',');
+  const prefer = pref ? { Prefer: pref } : {};
   const r = await fetch(`${env('SUPABASE_URL')}/rest/v1/${path}`, {
     method,
     headers: serviceHeaders(prefer),
@@ -105,7 +106,7 @@ export async function postChannel(payload) {
 
 // 디스코드 메시지용 이름 표기: 닉네임 (@멘션)
 export function who(p) {
-  if (!p) return '알 수 없음';
+  if (!p) return '탈퇴한 회원';
   const name = p.mc_name || p.discord_name || '이름 없음';
   return p.discord_id ? `${name} (<@${p.discord_id}>)` : name;
 }
