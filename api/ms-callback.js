@@ -82,7 +82,14 @@ export default async function handler(req, res) {
     if (!pr.ok) throw fail('mc_profile');
     const profile = await pr.json();
 
-    // 6) 저장: 같은 닉네임을 인증받은 다른 계정이 있으면 인증 해제 후 본인에게 부여
+    // 6) 고정 관리자는 등록된 닉네임과 같은 계정일 때만 연동 (다른 계정으로 덮어써 관리자 권한을 잃지 않도록)
+    const [me] = await db(`profiles?id=eq.${st.uid}&select=mc_name,mc_verified`);
+    const fixedList = await db('fixed_admins?select=mc_name');
+    const lower = (v) => String(v || '').toLowerCase();
+    const isFixed = me?.mc_verified && fixedList.some((f) => lower(f.mc_name) === lower(me.mc_name));
+    if (isFixed && lower(me.mc_name) !== lower(profile.name)) throw fail('fixed_mismatch');
+
+    // 7) 저장: 같은 닉네임을 인증받은 다른 계정이 있으면 인증 해제 후 본인에게 부여
     const pattern = encodeURIComponent(profile.name.replace(/_/g, '\\_'));
     await db(`profiles?mc_verified=is.true&mc_name=ilike.${pattern}&id=neq.${st.uid}`, {
       method: 'PATCH',

@@ -1,4 +1,6 @@
-# 로켓단 사이트 설정 가이드
+# Team Rocket UnderWorld 사이트 설정 가이드
+
+사이트 주소: https://team-rocket-underworld.vercel.app · 제작자 콜라 사우루스
 
 순서대로 따라 하면 됩니다. 1~5단계를 마치면 사이트가 동작하고, 6단계(Microsoft 연동)는 Mojang 승인이 난 뒤에 해도 됩니다.
 
@@ -6,6 +8,7 @@
 
 ```
 index.html           사이트 화면 (CONFIG만 채우면 됨)
+assets/              로고, 파비콘, 링크 미리보기 이미지
 api/_lib.js          서버 함수 공용 코드
 api/notify.js        디스코드 알림 (DM, 채널)
 api/ms-start.js      Microsoft 로그인 시작
@@ -38,8 +41,8 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 2. **Redirects**에 `https://<프로젝트ID>.supabase.co/auth/v1/callback`을 추가합니다.
 3. Supabase → **Authentication → Sign In / Providers → Discord**를 켜고 Client ID와 Secret을 붙여넣습니다.
 4. Supabase → **Authentication → URL Configuration**에서
-   - Site URL: `https://<내사이트>.vercel.app`
-   - Redirect URLs: `https://<내사이트>.vercel.app/**`
+   - Site URL: `https://team-rocket-underworld.vercel.app`
+   - Redirect URLs: `https://team-rocket-underworld.vercel.app/**`
 
 **봇 (DM 알림용)**
 1. **Bot** 탭에서 Reset Token으로 봇 토큰을 발급받아 복사합니다 (`DISCORD_BOT_TOKEN`).
@@ -59,7 +62,7 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 | `ALLOW_ADMIN_VERIFY` | `true`(기본): 승인 전까지 "닉네임 직접 등록 → 관리자 인증"으로 임시 활동 허용. `false`: Microsoft 연동만 허용 |
 | `SHOW_DEMO_LINK` | 첫 화면에 "데모로 둘러보기" 버튼 표시 |
 
-데모는 언제든 `https://<내사이트>.vercel.app/?demo`로 열 수 있습니다.
+데모는 언제든 `https://team-rocket-underworld.vercel.app/?demo`로 열 수 있습니다.
 
 ## 4. Vercel 환경변수
 
@@ -71,7 +74,7 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role(secret) 키 |
 | `DISCORD_BOT_TOKEN` | 봇 토큰 |
 | `DISCORD_WEBHOOK_URL` | 웹후크 URL |
-| `SITE_URL` | `https://<내사이트>.vercel.app` (끝에 / 없이) |
+| `SITE_URL` | `https://team-rocket-underworld.vercel.app` (끝에 / 없이) |
 | `AUTH_STATE_SECRET` | 아무 긴 무작위 문자열 (예: 비밀번호 생성기로 40자) |
 | `CRON_SECRET` | (선택) 아무 무작위 문자열. 넣으면 keepalive를 Vercel 크론만 호출할 수 있음 |
 
@@ -104,9 +107,11 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 1. [Azure Portal](https://portal.azure.com) → **App registrations → New registration**
    - 이름: 아무거나. 단, Minecraft, Mojang, Microsoft 같은 단어는 빼야 합니다.
    - 지원 계정 유형: **Personal Microsoft accounts only**
-   - Redirect URI: 플랫폼 **Web**, `https://<내사이트>.vercel.app/api/ms-callback`
+   - Redirect URI: 플랫폼 **Web**, `https://team-rocket-underworld.vercel.app/api/ms-callback`
 2. **Certificates & secrets → New client secret**으로 비밀값을 만들어 복사합니다.
 3. [aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid)에 Application (client) ID와 Directory (tenant) ID를 제출해 Mojang 승인을 신청합니다. 승인 전에는 "아직 승인이 나지 않았다"는 안내가 뜹니다.
+   - 승인 전에도 **관리자**는 내 정보 → "Microsoft 연동 테스트"로 설정을 시험할 수 있습니다. "아직 Mojang 승인이 나지 않아…"가 뜨면 승인 외 설정은 정상입니다.
+   - 고정 관리자는 등록된 닉네임(`debug_stick`)과 같은 마인크래프트 계정으로만 연동됩니다. 다른 계정으로 로그인하면 거부되어 관리자 권한이 유지됩니다.
 4. Vercel 환경변수에 `MS_CLIENT_ID`, `MS_CLIENT_SECRET`을 추가하고 Redeploy합니다.
 5. 승인이 나면 `index.html`의 `MS_LINK_ENABLED`를 `true`로 바꿉니다.
 

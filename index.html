@@ -3,9 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>로켓단 · 코블몬 마을 본부</title>
-<meta name="description" content="코블몬 서버 로켓단 마을의 의뢰, PVP 대회, 경매, 단원 전용 거래소">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 1 29 8.5v15L16 31 3 23.5v-15z' fill='%23e0282f'/%3E%3Cpath d='M16 7c3 2.6 4.4 6.2 4.4 10.4V21h-8.8v-3.6C11.6 13.2 13 9.6 16 7z' fill='%23fff'/%3E%3C/svg%3E">
+<title>로켓단 · Team Rocket UnderWorld</title>
+<meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 의뢰, PVP 대회, 경매, 단원 전용 거래소">
+<meta property="og:title" content="로켓단 · Team Rocket UnderWorld">
+<meta property="og:description" content="코블몬 서버 로켓단의 의뢰 · PVP 대회 · 경매 게시판">
+<meta property="og:image" content="/assets/og.jpg">
+<meta name="theme-color" content="#0b0b0e">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -36,7 +41,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .top{position:sticky;top:0;z-index:20;background:rgba(11,11,14,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .top .wrap{display:flex;align-items:center;gap:16px;height:64px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0}
-.brand svg{width:34px;height:34px;flex:none}
+.brand img{width:44px;height:44px;flex:none;object-fit:contain;filter:drop-shadow(0 0 6px rgba(224,40,47,.35))}
 .brand b{font:400 24px/1 var(--display);letter-spacing:.02em}
 .brand small{display:block;font:500 10px/1 var(--mono);color:var(--muted);letter-spacing:.18em;margin-top:4px}
 .userbox{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0}
@@ -114,7 +119,7 @@ details.ent[open] summary::before{content:"▾ "}
 /* ---------- hero ---------- */
 .hero{margin-top:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
 .hero .main{position:relative;background:linear-gradient(135deg,#1a0b0d 0%,var(--panel) 55%);border:1px solid rgba(224,40,47,.35);border-radius:14px;padding:28px;overflow:hidden}
-.hero .main::after{content:"R-HQ";position:absolute;right:-8px;bottom:-26px;font:400 120px/1 var(--display);color:rgba(224,40,47,.07);pointer-events:none}
+.hero .main::after{content:"R";position:absolute;right:-8px;bottom:-26px;font:400 120px/1 var(--display);color:rgba(224,40,47,.07);pointer-events:none}
 .hero .code{font:700 11px/1 var(--mono);letter-spacing:.24em;color:var(--red2)}
 .hero h1{font:400 40px/1.1 var(--display);margin:12px 0 10px}
 .hero p{margin:0;color:#c9c7d3;max-width:44ch}
@@ -134,8 +139,10 @@ details.ent[open] summary::before{content:"▾ "}
 
 /* ---------- landing ---------- */
 .landing{min-height:calc(100vh - 140px);display:grid;place-items:center;text-align:center;padding:40px 0}
-.landing .emb svg{width:96px;height:96px}
-.landing h1{font:400 52px/1.05 var(--display);margin:18px 0 10px}
+.landing .emb img{width:min(260px,62vw);height:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 30px rgba(224,40,47,.35))}
+.landing h1{font:400 40px/1.1 var(--display);margin:14px 0 8px;letter-spacing:.01em}
+.credit{position:relative;z-index:1;text-align:center;margin-top:64px;padding:0 16px 22px;font:500 11px/1.4 var(--mono);color:var(--dim);letter-spacing:.06em}
+.credit b{color:var(--muted);font-weight:600}
 .landing p{color:var(--muted);margin:0 0 26px}
 .landing .fine{font-size:13px;margin-top:18px}
 
@@ -152,6 +159,7 @@ textarea.input{min-height:90px;resize:vertical}
 .mrow .id{display:flex;align-items:center;gap:10px;min-width:0}
 .mrow .id div{min-width:0}
 .mrow .id b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .id b .chip{margin-left:4px;vertical-align:1px}
 .mrow .id small{color:var(--muted);font-size:12px}
 .mrow .mc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
 .mrow .mc code{font-family:var(--mono);font-size:13px}
@@ -199,6 +207,10 @@ textarea.input{min-height:90px;resize:vertical}
 .gate p{color:#c9c7d3;max-width:56ch;margin:0 auto 18px;font-size:14.5px}
 .gate-alt{margin:16px auto 0;max-width:56ch;font-size:13.5px;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
 .btn.big{height:46px;padding:0 24px;font-size:16px}
+.testbox{margin-top:14px;padding:12px 14px;border:1px dashed rgba(242,193,78,.45);border-radius:9px;background:var(--goldbg)}
+.testbox b{color:var(--gold)}
+.testbox p{margin:6px 0 10px;color:#c9c7d3;font-size:13px}
+.testbox p b{color:var(--text)}
 .linked{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
 .panel .linked + p{margin-top:4px}
 .loading{padding:60px 0;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px;letter-spacing:.1em}
@@ -206,6 +218,7 @@ textarea.input{min-height:90px;resize:vertical}
 @media (max-width:760px){
   .hero,.two{grid-template-columns:1fr}
   .hero h1{font-size:32px}
+  .landing h1{font-size:30px}
   .head h1{font-size:26px}
   .mrow{grid-template-columns:1fr}
   .mrow .ctl{justify-content:flex-start}
@@ -221,15 +234,8 @@ textarea.input{min-height:90px;resize:vertical}
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#home" aria-label="로켓단 홈">
-      <svg viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M32 2 58 17v30L32 62 6 47V17z" fill="#e0282f"/>
-        <path d="M32 6 54.5 19v26L32 58 9.5 45V19z" fill="none" stroke="#0b0b0e" stroke-width="2"/>
-        <path d="M32 13c6 5 8.8 12.4 8.8 20.8V41H23.2v-7.2C23.2 25.4 26 18 32 13z" fill="#fff"/>
-        <circle cx="32" cy="27" r="3.4" fill="#e0282f"/>
-        <path d="M23.2 34 17 41.5V45h6.2zM40.8 34 47 41.5V45h-6.2z" fill="#fff"/>
-        <path d="M27 43h10l-2 7.5-3-3.2-3 3.2z" fill="#f2c14e"/>
-      </svg>
-      <span><b>로켓단</b><small>COBBLEMON VILLAGE HQ</small></span>
+      <img src="/assets/logo-128.webp" alt="" width="44" height="44">
+      <span><b>로켓단</b><small>TEAM ROCKET UNDERWORLD</small></span>
     </a>
     <div class="userbox" id="userbox"></div>
   </div>
@@ -237,6 +243,7 @@ textarea.input{min-height:90px;resize:vertical}
   <div class="wrap"><nav class="tabs" id="tabs" aria-label="메뉴"></nav></div>
 </header>
 <main class="wrap" id="view"><div class="loading">LOADING…</div></main>
+<footer class="credit">제작자 <b>콜라 사우루스</b></footer>
 <div class="modal" id="modal" hidden></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
@@ -272,7 +279,9 @@ const ROLE_NAME = { member:'일반', rocket:'로켓단', admin:'관리자' };
 const MC_ERRORS = {
   cancelled:'Microsoft 로그인을 취소했어요.',
   state:'인증 시간이 지났어요. 다시 시도해 주세요.',
-  not_approved:'아직 Mojang 승인이 나지 않아 닉네임을 확인할 수 없어요. 관리자 인증을 이용해 주세요.',
+  not_approved:'아직 Mojang 승인이 나지 않아 닉네임을 확인할 수 없어요. (관리자 테스트였다면 승인 외 설정은 모두 정상이에요)',
+  fixed_mismatch:'고정 관리자 계정은 등록된 닉네임과 같은 마인크래프트 계정으로만 연동할 수 있어요.',
+  ms_token:'Microsoft 로그인 정보를 확인하지 못했어요. Vercel의 MS_CLIENT_ID · MS_CLIENT_SECRET과 Azure 리디렉션 주소를 확인해 주세요.',
   no_xbox:'이 Microsoft 계정에 Xbox 프로필이 없어요. minecraft.net에 한 번 로그인한 뒤 다시 시도해 주세요.',
   child:'청소년 계정은 보호자가 Xbox 가족 설정에서 허용해야 해요.',
   no_java:'이 계정에는 마인크래프트 자바 에디션이 없어요.',
@@ -433,7 +442,7 @@ function makeDemoApi(){
       { id:'u6', discord_id:'6', discord_name:'지우개', mc_name:'Eraser_99', mc_verified:false, role:'member', created_at:t(2) },
     ],
     posts:[
-      { id:1, board:'notice', title:'로켓단 마을 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
+      { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
       { id:2, board:'request', title:'성격 겁쟁이 이브이 구해요', body:'개체값은 상관없어요. 마을 창고 앞에서 거래해요.', meta:{ pokemon:'이브이 (겁쟁이)', reward:'5,000 코블달러' }, status:'open', author_id:'u4', created_at:t(5) },
       { id:3, board:'request', title:'얼음돌 3개 필요합니다', body:'', meta:{ pokemon:'얼음돌 x3', reward:'썬더스톤 1개' }, status:'closed', author_id:'u3', created_at:t(52) },
       { id:4, board:'pvp', title:'제1회 로켓단 컵 (싱글 배틀)', body:'우승자에게 마스터볼 1개!', meta:{ when:'11/8(토) 저녁 9시', rules:'싱글 6:6 · Lv.50 고정', capacity:'8' }, status:'open', author_id:'u1', created_at:t(12) },
@@ -588,9 +597,9 @@ async function refresh(){
 /* ---------- 로그인 전 ---------- */
 function landing(){
   return `<section class="landing"><div>
-    <div class="emb">${$('.brand svg').outerHTML}</div>
-    <h1>로켓단 본부</h1>
-    <p>코블몬 서버 로켓단 마을의 의뢰 · 대회 · 경매 게시판</p>
+    <div class="emb"><img src="/assets/logo.webp" alt="로켓단 로고" width="640" height="640"></div>
+    <h1>Team Rocket UnderWorld</h1>
+    <p>코블몬 서버 로켓단의 의뢰 · 대회 · 경매 게시판</p>
     <button class="btn discord" data-act="login">디스코드로 로그인</button>
     <ol class="steps">
       <li><b>1</b>디스코드 로그인</li>
@@ -604,6 +613,8 @@ function landing(){
 /* ---------- Microsoft 연동 안내 ---------- */
 const msReady = () => S.api.demo || CONFIG.MS_LINK_ENABLED;
 const manualAllowed = () => !msReady() && CONFIG.ALLOW_ADMIN_VERIFY;
+// 승인 전이라도 관리자는 연동을 눌러 설정을 시험해 볼 수 있음
+const msAdminTest = () => !msReady() && acc().admin;
 
 function gate(){
   const me = S.me;
@@ -645,7 +656,7 @@ async function viewHome(){
   ${a.verified ? '' : gate()}
   <section class="hero">
     <div class="main">
-      <div class="code">ROCKET VILLAGE · HQ</div>
+      <div class="code">TEAM ROCKET UNDERWORLD</div>
       <h1>어서 와, ${esc(nameOf(me))}</h1>
       <p>의뢰를 맡기고, 대회에 나가고, 경매에 참여하세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
     </div>
@@ -810,12 +821,15 @@ async function viewAdmin(){
   const list = profiles.filter(p => !q || [p.mc_name, p.discord_name].some(s => String(s || '').toLowerCase().includes(q)));
   const iAmFixed = acc().fixed;
 
+  const roleBadge = (p, fx) => fx ? '<span class="chip gold">고정 관리자</span>'
+    : p.role === 'admin' ? '<span class="chip gold">관리자</span>'
+    : p.role === 'rocket' ? '<span class="chip red">로켓단</span>' : '<span class="chip">일반</span>';
   const row = (p) => {
     const fx = isFixed(p);
     const status = p.mc_verified
-      ? `<span class="chip open">인증 · ${p.mc_verified_via === 'microsoft' ? 'MS' : '관리자'}</span>`
+      ? `<span class="chip open">${p.mc_verified_via === 'microsoft' ? 'MS 인증' : '수동 인증'}</span>`
       : p.mc_name ? '<span class="chip gold">인증 대기</span>' : '<span class="chip">미등록</span>';
-    const roleSel = fx ? '<span class="chip gold">고정 관리자</span>' :
+    const roleSel = fx ? '<span class="muted" style="font-size:12px">권한 변경 불가</span>' :
       `<select data-act="role" data-id="${p.id}" aria-label="권한">
         ${['member','rocket','admin'].map(r => `<option value="${r}" ${p.role === r ? 'selected' : ''} ${r === 'admin' && !iAmFixed && p.role !== 'admin' ? 'disabled' : ''}>${ROLE_NAME[r]}</option>`).join('')}
       </select>`;
@@ -823,7 +837,7 @@ async function viewAdmin(){
       ? `<button class="btn sm ghost" data-act="verify" data-id="${p.id}" data-v="0">인증 해제</button>`
       : `<button class="btn sm red" data-act="verify" data-id="${p.id}" data-v="1">인증</button>`;
     return `<div class="mrow">
-      <div class="id">${avatar(p)}<div><b>${esc(p.discord_name || '(이름 없음)')}</b><small>가입 ${ago(p.created_at)}</small></div></div>
+      <div class="id">${avatar(p)}<div><b>${esc(p.discord_name || '(이름 없음)')} ${roleBadge(p, fx)}</b><small>가입 ${ago(p.created_at)}</small></div></div>
       <div class="mc"><code>${esc(p.mc_name || '—')}</code>${status}</div>
       <div class="ctl">${verifyBtn}${roleSel}</div>
     </div>`;
@@ -857,7 +871,7 @@ function viewMe(){
       <p>Microsoft 계정으로 확인된 자바 닉네임이에요. 마인크래프트에서 닉네임을 바꿨다면 다시 연동하면 갱신돼요.</p>
       ${msReady() ? '<button class="btn sm" data-act="ms-link">다시 연동하기</button>' : ''}`;
   } else if (a.verified) {
-    msBlock = `<div class="linked"><span class="chip open">관리자 인증</span><b class="mono">${esc(me.mc_name)}</b></div>
+    msBlock = `<div class="linked"><span class="chip open">수동 인증</span><b class="mono">${esc(me.mc_name)}</b></div>
       <p>관리자가 확인한 닉네임으로 활동 중이에요.${msReady() ? ' Microsoft로 연동하면 자동 확인으로 바뀌어요.' : ''}</p>
       ${msReady() ? '<button class="btn sm red" data-act="ms-link">Microsoft로 연동하기</button>' : ''}`;
   } else if (msReady()) {
@@ -866,6 +880,13 @@ function viewMe(){
   } else {
     msBlock = `<p>Microsoft 연동은 준비 중이에요.${manualAllowed() ? ' 그동안은 아래에 닉네임을 등록하면 관리자가 확인 후 인증해 드려요.' : ''}</p>
       <button class="btn big" disabled>Microsoft 연동 준비 중</button>`;
+  }
+
+  if (msAdminTest()) {
+    msBlock += `<div class="testbox"><b>관리자 전용 테스트</b>
+      <p>Mojang 승인 전에도 설정이 맞는지 시험해 볼 수 있어요. Microsoft 로그인 후 <b>"아직 Mojang 승인이 나지 않아…"</b> 안내가 뜨면
+         승인만 빼고 모든 설정이 정상이라는 뜻이에요. 다른 오류가 뜨면 그 문구를 알려주세요.</p>
+      <button class="btn sm red" data-act="ms-link">Microsoft 연동 테스트</button></div>`;
   }
 
   const showForm = manualAllowed() && !a.fixed;
