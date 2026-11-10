@@ -260,7 +260,7 @@ textarea.input{min-height:90px;resize:vertical}
 .hx-val{font:700 13px 'JetBrains Mono',monospace;fill:#fff}
 .hx-val.any{fill:#77777f}
 .hx-lb.up{fill:#ff5a5f}.hx-lb.dn{fill:#5b8cff}
-.gold{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;flex:none}
+.gold-icon{width:16px;height:16px;image-rendering:pixelated;vertical-align:-3px;flex:none}
 .gold-in{display:flex;align-items:center;gap:8px}
 .gold-in .input{max-width:170px;font-family:var(--mono)}
 .gold-in .sign{font:700 15px var(--mono);color:var(--muted);width:12px;text-align:center}
@@ -410,7 +410,7 @@ function localInputValue(d){
   return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
 }
 const won = (n) => Number(n || 0).toLocaleString('ko-KR');
-const GOLD = '<img class="gold" src="assets/gold.png" alt="골드">';
+const GOLD = '<img class="gold-icon" src="assets/gold.png" alt="골드">';
 
 /* ---------- 포켓몬 데이터 ---------- */
 // 육각형 꼭짓점 순서: 위(체력)부터 시계 방향
