@@ -29,9 +29,27 @@
 *{box-sizing:border-box}
 html{color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 'Pretendard Variable',Pretendard,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(1200px 500px at 85% -10%,rgba(224,40,47,.14),transparent 60%),
-             repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 4px)}
+/* 배경: 네온 뒷골목 (밤 도시 실루엣, 붉은 네온 안개, 빗줄기) */
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bgfx>div{position:absolute;inset:0}
+/* C. 네온 뒷골목: 밤 도시 실루엣, 붉은 네온 안개, 빗줄기 */
+body{background:linear-gradient(180deg, #060609 0%, #0b0910 50%, #1b0a10 100%)}
+.bgfx .glow{background:
+  radial-gradient(45% 30% at 16% 74%, rgba(255,40,90,.36), transparent 70%),
+  radial-gradient(42% 28% at 84% 70%, rgba(224,40,47,.40), transparent 70%),
+  radial-gradient(60% 22% at 50% 82%, rgba(255,110,60,.16), transparent 70%),
+  linear-gradient(transparent 55%, rgba(120,20,40,.18));
+  animation:bgFog 11s ease-in-out infinite alternate}
+.bgfx .far{top:auto;bottom:0;height:min(48vh,420px);background:url(assets/bg/city-far.svg) repeat-x 0 100%/auto 100%;opacity:.9}
+.bgfx .near{top:auto;bottom:0;height:min(34vh,300px);background:url(assets/bg/city-near.svg) repeat-x 140px 100%/auto 100%}
+.bgfx .rain{inset:-120px 0 0 0;
+  background:repeating-linear-gradient(104deg, transparent 0 22px, rgba(200,210,255,.06) 22px 23px, transparent 23px 47px, rgba(200,210,255,.035) 47px 48px);
+  -webkit-mask-image:linear-gradient(transparent, #000 25%, #000 75%, transparent);mask-image:linear-gradient(transparent, #000 25%, #000 75%, transparent);
+  animation:bgRain .9s linear infinite}
+.bgfx .vig{background:radial-gradient(130% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.7))}
+@keyframes bgFog{from{transform:translateX(-3%) scale(1)}to{transform:translateX(3%) scale(1.06)}}
+@keyframes bgRain{from{transform:translate(0,0)}to{transform:translate(-26px,120px)}}
+@media (prefers-reduced-motion: reduce){.bgfx div{animation:none!important}}
 a{color:inherit}
 button,input,select,textarea{font:inherit;color:inherit}
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 16px}
@@ -141,7 +159,7 @@ details.ent[open] summary::before{content:"▾ "}
 .landing{min-height:calc(100vh - 140px);display:grid;place-items:center;text-align:center;padding:40px 0}
 .landing .emb img{width:min(260px,62vw);height:auto;display:block;margin:0 auto;filter:drop-shadow(0 8px 30px rgba(224,40,47,.35))}
 .landing h1{font:400 40px/1.1 var(--display);margin:14px 0 8px;letter-spacing:.01em}
-.credit{position:relative;z-index:1;text-align:center;margin-top:64px;padding:0 16px 22px;font:500 11px/1.4 var(--mono);color:var(--dim);letter-spacing:.06em}
+.credit{position:relative;z-index:1;text-align:center;width:fit-content;margin:64px auto 22px;padding:5px 14px;border-radius:99px;background:rgba(6,6,10,.78);border:1px solid rgba(255,255,255,.06);font:500 11px/1.4 var(--mono);color:var(--dim);letter-spacing:.06em}
 .credit b{color:var(--muted);font-weight:600}
 .landing p{color:var(--muted);margin:0 0 26px}
 .landing .fine{font-size:13px;margin-top:18px}
@@ -317,6 +335,7 @@ textarea.input{min-height:90px;resize:vertical}
 </style>
 </head>
 <body>
+<div class="bgfx" aria-hidden="true"><div class="glow"></div><div class="far"></div><div class="rain"></div><div class="near"></div><div class="vig"></div></div>
 <div id="demo" class="demo" hidden></div>
 <header class="top">
   <div class="wrap">
@@ -355,11 +374,11 @@ const BOARDS = {
   request: { name:'포켓몬 의뢰', code:'MISSION', desc:'필요한 포켓몬을 의뢰하고, 잡아줄 트레이너를 찾아요. 의뢰는 7일 뒤 자동 마감돼요.',
              join:'의뢰 수락', entryLabel:'수락', msgPh:'예: 내일까지 잡아드릴게요. 저녁 8시에 접속합니다.',
              fields:[{k:'pokemon',label:'필요한 포켓몬'},{k:'reward',label:'보상'}] },
-  pvp:     { name:'PVP 대회', code:'BATTLE', desc:'대회를 열고 참가 신청을 받아요.',
+  pvp:     { name:'PVP 대회', code:'BATTLE', desc:'관리자가 연 대회에 참가 신청을 해요.', adminOnly:true,
              join:'참가 신청', entryLabel:'참가', msgPh:'예: 주말 저녁에만 가능합니다.',
              deadline:true,
              fields:[{k:'when',label:'일시',ph:'예: 11/8(토) 저녁 9시'},{k:'rules',label:'규칙',ph:'예: 싱글 6:6, Lv.50 고정'},{k:'capacity',label:'정원',ph:'예: 16',type:'number'}] },
-  auction: { name:'경매 모집', code:'AUCTION', desc:'경매를 예고하고 참여자를 모아요.',
+  auction: { name:'경매 모집', code:'AUCTION', desc:'관리자가 예고한 경매에 참여 신청을 해요.', adminOnly:true,
              join:'참여 신청', entryLabel:'참여', msgPh:'예: 시작가 이상 입찰 의사 있습니다.',
              deadline:true,
              fields:[{k:'item',label:'경매 물품',ph:'예: 이로치 리자몽 Lv.60'},{k:'when',label:'일시',ph:'예: 11/2(일) 오후 3시'},{k:'start',label:'시작가',ph:'예: 10,000'}] },
@@ -878,6 +897,7 @@ function makeDemoApi(){
     },
     async createPost(d){
       const me = meId(), admin = access(prof(me)).admin;
+      if (['notice', 'pvp', 'auction'].includes(d.board) && !admin) throw new Error('권한이 없어요.');
       if (d.board === 'request' && !admin) {
         if (D.posts.some(p => p.board === 'request' && p.author_id === me && isOpen(p))) throw new Error('이미 모집 중인 포켓몬 의뢰가 있어요. 기존 의뢰가 마감된 뒤에 올릴 수 있어요.');
         d = { ...d, closes_at:new Date(Date.now() + 7*86400e3).toISOString() };
@@ -1097,9 +1117,11 @@ async function viewHome(){
 async function viewBoard(board){
   const B = BOARDS[board], a = acc();
   const posts = await S.api.listPosts(board);
-  const writeBtn = a.verified
-    ? `<button class="btn red" data-act="write" data-board="${board}">+ 글쓰기</button>`
-    : `<button class="btn" disabled title="Microsoft 연동 후 이용 가능">연동 후 글쓰기</button>`;
+  const writeBtn = B.adminOnly && !a.admin
+    ? `<span class="muted" style="font-size:13px">${B.name} 글은 관리자만 올릴 수 있어요.</span>`
+    : a.verified
+      ? `<button class="btn red" data-act="write" data-board="${board}">+ 글쓰기</button>`
+      : `<button class="btn" disabled title="Microsoft 연동 후 이용 가능">연동 후 글쓰기</button>`;
   return `
   <div class="head"><div><div class="code">${B.code}</div><h1>${B.name}</h1><p>${B.desc}</p></div>${writeBtn}</div>
   ${posts.length ? `<div class="grid">${posts.map(postCard).join('')}</div>` : '<div class="empty">아직 글이 없어요.</div>'}`;

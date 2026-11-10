@@ -278,7 +278,7 @@ create policy posts_insert on public.posts
   for insert to authenticated
   with check (author_id = auth.uid()
               and public.is_verified()
-              and (board <> 'notice' or public.is_admin()));
+              and (board not in ('notice', 'pvp', 'auction') or public.is_admin()));  -- 공지·PVP 대회·경매는 관리자만
 
 drop policy if exists posts_update on public.posts;
 create policy posts_update on public.posts
