@@ -149,9 +149,8 @@ details.ent[open] summary::before{content:"▾ "}
 .feed a:hover{border-color:var(--line2)}
 .feed .t{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .feed .when{font:500 12px/1 var(--mono);color:var(--muted);flex:none}
-.pinned{margin-top:22px;border:1px solid var(--line);border-radius:12px;background:rgba(21,21,27,.92);padding:12px 12px 10px}
+.pinned{margin-top:34px;border:1px solid var(--line);border-radius:12px;background:rgba(21,21,27,.92);padding:12px 12px 10px}
 .pin-head{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--muted);margin:2px 4px 10px}
-.pinned + .hero{margin-top:14px}
 .nlist{display:flex;flex-direction:column;gap:6px}
 .nrow{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px;text-decoration:none;min-width:0}
 .nrow:hover{border-color:var(--line2);background:var(--panel2)}
@@ -1156,8 +1155,6 @@ async function viewHome(){
   const openCount = recent.filter(isOpen).length;
   return `
   ${a.verified ? '' : gate()}
-  ${pinned.length ? `<section class="pinned"><div class="pin-head">📌 주요 공지</div>
-    <div class="nlist">${pinned.map(noticeRow).join('')}</div></section>` : ''}
   <section class="hero">
     <div class="main">
       <div class="code">TEAM ROCKET UNDERWORLD</div>
@@ -1172,6 +1169,8 @@ async function viewHome(){
     </div>
   </section>
 
+  ${pinned.length ? `<section class="pinned"><div class="pin-head">📌 주요 공지</div>
+    <div class="nlist">${pinned.map(noticeRow).join('')}</div></section>` : ''}
   <h2 class="sec">NOTICE · 최근 공지</h2>
   <div class="toolbar"><a class="more" href="#notice">공지 전체 보기 →</a>
     ${a.admin ? `<button class="btn sm" data-act="write" data-board="notice">공지 쓰기</button>` : ''}</div>
