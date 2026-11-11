@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>로켓단의 뒷세계 · Team Rocket UnderWorld</title>
-<meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 의뢰, PVP 대회, 경매, 단원 전용 거래소">
+<meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 포켓몬 의뢰, PVP 대회, 단원 전용 거래소">
 <meta property="og:title" content="로켓단의 뒷세계 · Team Rocket UnderWorld">
-<meta property="og:description" content="코블몬 서버 로켓단의 의뢰 · PVP 대회 · 경매 게시판">
+<meta property="og:description" content="코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 게시판">
 <meta property="og:image" content="/assets/og.jpg">
 <meta name="theme-color" content="#0b0b0e">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -376,6 +376,10 @@ const BOARDS = {
              deadline:true,
              fields:[{k:'item',label:'경매 물품',ph:'예: 이로치 리자몽 Lv.60'},{k:'when',label:'일시',ph:'예: 11/2(일) 오후 3시'},{k:'start',label:'시작가',ph:'예: 10,000'}] },
 };
+// 임시로 숨긴 게시판 (서버 규칙상 경매 금지). 다시 열려면 여기서 'auction'을 지우세요.
+const HIDDEN_BOARDS = new Set(['auction']);
+const shownBoards = (list) => list.filter(b => !HIDDEN_BOARDS.has(b));
+
 const ROLE_NAME = { member:'일반', rocket:'로켓단', admin:'관리자' };
 const MC_ERRORS = {
   cancelled:'Microsoft 로그인을 취소했어요.',
@@ -840,7 +844,7 @@ function makeDemoApi(){
       { id:'u6', discord_id:'6', discord_name:'지우개', mc_name:'Eraser_99', mc_verified:false, role:'member', created_at:t(2) },
     ],
     posts:[
-      { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'의뢰, 대회, 경매는 여기서 올려주세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
+      { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'포켓몬 의뢰와 PVP 대회는 여기서 확인하세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
       { id:2, board:'request', title:'✨ 이브이', body:'마을 창고 앞에서 거래해요.', status:'open', author_id:'u4', created_at:t(5), closes_at:after(6*24 + 19),
         meta:{ pk:{ ...demoPk(133, '이브이', true, { n:'적응력', hidden:false }, { k:'timid', n:'겁쟁이', up:'spe', dn:'atk' }, { hp:31, atk:null, def:31, spe:31, spd:31, spa:31 }), level:50 },
                reward:{ gold:5000, less:100, strict:false, more:50, lvLess:20, lvStrict:false, other:'' } } },
@@ -979,7 +983,7 @@ const acc = () => S.me?.acc || {};
 
 function tabList(){
   if (acc().banned) return [];
-  const t = [['home','홈'],['request','포켓몬 의뢰'],['pvp','PVP 대회'],['auction','경매']];
+  const t = [['home','홈'], ...[['request','포켓몬 의뢰'],['pvp','PVP 대회'],['auction','경매']].filter(([k]) => !HIDDEN_BOARDS.has(k))];
   if (acc().rocket) t.push(['rocket','로켓단','rk']);
   if (acc().admin) t.push(['admin','관리자','ad']);
   t.push(['me','내 정보']);
@@ -1052,7 +1056,7 @@ function landing(){
     <div class="emb"><img src="assets/logo.webp" alt="로켓단 로고" width="640" height="640"></div>
     <h1>로켓단의 뒷세계</h1>
     <div class="landing-en">TEAM ROCKET UNDERWORLD</div>
-    <p>코블몬 서버 로켓단의 의뢰 · 대회 · 경매 게시판</p>
+    <p>코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 게시판</p>
     <button class="btn discord" data-act="login">디스코드로 로그인</button>
     <ol class="steps">
       <li><b>1</b>디스코드 로그인</li>
@@ -1081,7 +1085,7 @@ function gateBanner(){
 async function viewHome(){
   const [notices, recent] = await Promise.all([
     S.api.listPosts('notice', 3),
-    S.api.listPosts(['request','pvp','auction'], 8),
+    S.api.listPosts(shownBoards(['request','pvp','auction']), 8),
   ]);
   const me = S.me, a = acc();
   const openCount = recent.filter(isOpen).length;
@@ -1091,7 +1095,7 @@ async function viewHome(){
     <div class="main">
       <div class="code">TEAM ROCKET UNDERWORLD</div>
       <h1>어서 와, ${esc(nameOf(me))}</h1>
-      <p>의뢰를 맡기고, 대회에 나가고, 경매에 참여하세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
+      <p>포켓몬 의뢰를 맡기고, PVP 대회에 나가 보세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
     </div>
     <div class="stat">
       <div class="row"><span>내 권한</span><b>${a.fixed ? '고정 관리자' : a.admin ? '관리자' : a.rocket ? '로켓단' : '일반'}</b></div>
