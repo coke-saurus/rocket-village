@@ -171,7 +171,37 @@ details.ent[open] summary::before{content:"▾ "}
 .notice-page .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-bottom:16px;border-bottom:1px solid var(--line)}
 .notice-page .meta .av{width:24px;height:24px;font-size:11px}
 .notice-page .meta b{color:var(--text)}
-.notice-page .nbody{margin-top:18px;white-space:pre-wrap;word-break:break-word;line-height:1.75;font-size:15px;color:#dddbe6}
+.notice-page .nbody{margin-top:18px;word-break:break-word;line-height:1.75;font-size:15px;color:#dddbe6}
+.nbody.plain{white-space:pre-wrap}
+.md{white-space:normal}
+.md>*:first-child{margin-top:0}
+.md h1,.md h2,.md h3,.md h4{font-family:'Pretendard Variable',sans-serif;color:var(--text);line-height:1.35;margin:1.6em 0 .55em}
+.md h1{font-size:22px}
+.md h2{font-size:19px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.md h3{font-size:16px;color:var(--red2)}
+.md p{margin:.6em 0}
+.md ul,.md ol{margin:.5em 0;padding-left:1.4em}
+.md li{margin:.25em 0}
+.md li::marker{color:var(--red2)}
+.md strong{color:#fff}
+.md em{color:var(--gold);font-style:normal}
+.md a{color:var(--red2);text-underline-offset:3px}
+.md code{font-family:var(--mono);font-size:.88em;background:var(--bg2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--gold)}
+.md pre{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;overflow:auto}
+.md pre code{border:0;padding:0;background:none;color:#dddbe6}
+.md blockquote{margin:.9em 0;padding:10px 14px;border-left:3px solid var(--gold);background:var(--goldbg);border-radius:0 8px 8px 0;color:#efe3bf}
+.md blockquote p{margin:.2em 0}
+.md hr{border:0;border-top:1px dashed var(--line2);margin:1.4em 0}
+.md table{border-collapse:collapse;margin:.8em 0;font-size:14px;display:block;overflow-x:auto;max-width:100%}
+.md th,.md td{border:1px solid var(--line2);padding:6px 10px;text-align:left}
+.md th{background:var(--panel2);color:var(--text)}
+.md img{max-width:100%}
+.md-tabs{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.md-tabs .seg button{padding:4px 12px;font-size:13px}
+.md-preview{min-height:300px;max-height:56vh;overflow:auto;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;font-size:14.5px;line-height:1.7}
+.mdhelp{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.mdhelp summary{cursor:pointer}
+.mdhelp pre{margin:6px 0 0;padding:10px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;font:500 12px/1.6 var(--mono);color:#c9c7d3;white-space:pre-wrap}
 .notice-page .actions{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 .notice{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:9px;padding:14px 16px}
 .notice h3{margin:0 0 4px;font-size:16px}
@@ -1160,6 +1190,34 @@ async function viewHome(){
 }
 
 
+
+/* ---------- 마크다운 (공지) ---------- */
+let MD = null;
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = res; el.onerror = () => rej(new Error('마크다운 도구를 불러오지 못했어요.'));
+    document.head.append(el);
+  });
+}
+async function loadMd(){
+  if (MD) return MD;
+  await Promise.all([
+    window.marked ? null : loadScript('https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js'),
+    window.DOMPurify ? null : loadScript('https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js'),
+  ]);
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'A') { node.setAttribute('target', '_blank'); node.setAttribute('rel', 'noopener noreferrer'); }
+  });
+  MD = (src) => DOMPurify.sanitize(marked.parse(String(src || ''), { gfm:true, breaks:true }), { FORBID_TAGS:['style', 'form', 'input', 'iframe'] });
+  return MD;
+}
+// 마크다운으로 그리고, 도구를 못 불러오면 일반 글자로
+async function mdHtml(src){
+  try { return { html:(await loadMd())(src), md:true }; }
+  catch { return { html:esc(src), md:false }; }
+}
+
 /* ---------- 공지 ---------- */
 function noticeRow(n){
   return `<a class="nrow ${n.meta?.pinned ? 'pin' : ''}" href="#notice/${n.id}">
@@ -1181,16 +1239,73 @@ async function viewNotice(id){
   if (!n || n.board !== 'notice') return `<div class="head"><div><h1>공지를 찾을 수 없어요</h1><p>삭제됐거나 주소가 잘못됐어요.</p></div></div>
     <a class="btn" href="#notice">공지 전체 보기</a>`;
   const a = acc(), pinned = !!n.meta?.pinned;
+  const body = n.body ? await mdHtml(n.body) : null;
   return `<div class="nav-back"><a class="btn sm ghost" href="#home">← 홈으로</a><a class="btn sm ghost" href="#notice">공지 전체</a></div>
     <article class="notice-page ${pinned ? 'pin' : ''}">
       <div class="code">${pinned ? '📌 주요 공지' : 'NOTICE · 공지'}</div>
       <h1>${esc(n.title)}</h1>
       <div class="meta">${avatar(n.author)}<b>${esc(nameOf(n.author))}</b><span class="mono">${fmtDate(n.created_at)} · ${ago(n.created_at)}</span></div>
-      <div class="nbody">${n.body ? esc(n.body) : '<span class="muted">내용이 없어요.</span>'}</div>
+      <div class="nbody ${body?.md ? 'md' : 'plain'}">${body ? body.html : '<span class="muted">내용이 없어요.</span>'}</div>
       ${a.admin ? `<div class="actions">
+        <button class="btn sm" data-act="edit-notice" data-id="${n.id}">수정</button>
         <button class="btn sm" data-act="notice-pin" data-id="${n.id}" data-pin="${pinned ? 0 : 1}">${pinned ? '고정 해제' : '📌 주요 공지로 고정'}</button>
         <button class="btn sm danger" data-act="del-notice" data-id="${n.id}">삭제</button></div>` : ''}
     </article>`;
+}
+
+
+/* ---------- 공지 쓰기 · 수정 ---------- */
+const MD_HELP = `<details class="mdhelp"><summary>마크다운 쓰는 법</summary><pre>## 큰 제목        ### 작은 제목
+**굵게**   *기울임*   \`코드\`
+- 목록           1. 번호 목록
+> 강조 박스(인용)
+[링크 글자](https://주소)
+---  (구분선)
+| 표 | 머리 |
+|---|---|
+| 칸 | 칸 |</pre></details>`;
+function noticeForm(n){
+  const editing = !!n;
+  openForm({
+    title: editing ? '공지 수정' : '공지 쓰기',
+    sub: editing ? '' : '올리면 디스코드 알림 채널에도 소식이 올라가요.',
+    wide: true,
+    html: `<div class="field"><label>제목</label><input class="input" name="title" maxlength="80" required value="${esc(n?.title || '')}"></div>
+      <div class="field"><div class="md-tabs"><label>내용 <span class="hint">(마크다운 사용 가능)</span></label>
+          <div class="seg"><button type="button" class="on" data-mdtab="write">쓰기</button><button type="button" data-mdtab="preview">미리보기</button></div></div>
+        <textarea class="input mono-ish" name="body" id="nb" maxlength="2000" style="min-height:300px" placeholder="## 제목\n내용을 적어 주세요">${esc(n?.body || '')}</textarea>
+        <div class="nbody md md-preview" id="nb-prev" hidden></div>
+        <span class="hint" id="nb-count"></span>
+        ${MD_HELP}</div>
+      <div class="field"><label class="check"><input type="checkbox" name="pinned" ${n?.meta?.pinned ? 'checked' : ''}> 📌 주요 공지로 고정</label>
+        <span class="hint">홈 맨 위 주요 공지 칸에 항상 보여요.</span></div>`,
+    submit: editing ? '저장' : '올리기',
+    onOpen(){
+      const ta = $('#nb'), prev = $('#nb-prev'), cnt = $('#nb-count');
+      const count = () => { cnt.textContent = `${ta.value.length.toLocaleString()} / 2,000자`; };
+      ta.addEventListener('input', count); count();
+      $('#mform').addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-mdtab]'); if (!b) return;
+        document.querySelectorAll('[data-mdtab]').forEach(x => x.classList.toggle('on', x === b));
+        const pv = b.dataset.mdtab === 'preview';
+        ta.hidden = pv; prev.hidden = !pv;
+        if (pv) { prev.innerHTML = '<span class="muted">불러오는 중…</span>'; const r = await mdHtml(ta.value || '*내용이 없어요*'); prev.innerHTML = r.html; prev.classList.toggle('plain', !r.md); }
+      });
+    },
+    async onSubmit(f){
+      const meta = { ...(n?.meta || {}) };
+      if (f.pinned) meta.pinned = true; else delete meta.pinned;
+      const row = { title:f.title.trim(), body:(f.body || '').trim(), meta };
+      if (editing) {
+        await S.api.updatePost(n.id, row);
+        toast('공지를 수정했어요.'); renderView();
+      } else {
+        const post = await S.api.createPost({ board:'notice', ...row });
+        S.api.notify('post', post.id);
+        toast('공지를 올렸어요.'); location.hash = `#notice/${post.id}`;
+      }
+    },
+  });
 }
 
 /* ---------- 게시판 ---------- */
@@ -1528,6 +1643,7 @@ const ACTIONS = {
   async write(d){
     const B = BOARDS[d.board];
     if (d.board === 'request') return writeRequest();
+    if (d.board === 'notice') return noticeForm();
     const extra = B.fields.map(f => `<div class="field"><label>${esc(f.label)}</label>
       <input class="input" name="m_${f.k}" placeholder="${esc(f.ph)}" ${f.type === 'number' ? 'type="number" min="1" inputmode="numeric"' : 'maxlength="60"'}></div>`).join('');
     openForm({
@@ -1553,6 +1669,11 @@ const ACTIONS = {
         if (d.board === 'notice') location.hash = `#notice/${post.id}`; else renderView();
       },
     });
+  },
+  async 'edit-notice'(d){
+    const n = await S.api.getPost(Number(d.id));
+    if (!n) return toast('공지를 찾을 수 없어요.', 'err');
+    noticeForm(n);
   },
   async 'notice-pin'(d){
     const n = await S.api.getPost(Number(d.id));
