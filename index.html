@@ -149,6 +149,14 @@ details.ent[open] summary::before{content:"▾ "}
 .feed a:hover{border-color:var(--line2)}
 .feed .t{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .feed .when{font:500 12px/1 var(--mono);color:var(--muted);flex:none}
+.dcban{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px;padding:12px 16px;border-radius:12px;background:rgba(88,101,242,.14);border:1px solid rgba(88,101,242,.45)}
+.dcban .dcico{font-size:22px}
+.dcban .txt{flex:1;min-width:220px;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.dcban .txt small{color:#c4c8f5;font-size:12.5px}
+.btn.dc{background:#5865f2;border-color:#5865f2;color:#fff}
+.btn.dc:hover{background:#6d78f5}
+#dcban-slot:not(:empty) + .hero,#dcban-slot:not(:empty) + .gate{margin-top:14px}
+#dcban-slot:empty{display:none}
 .pinned{margin-top:34px;border:1px solid var(--line);border-radius:12px;background:rgba(21,21,27,.92);padding:12px 12px 10px}
 .pin-head{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--muted);margin:2px 4px 10px}
 .nlist{display:flex;flex-direction:column;gap:6px}
@@ -411,6 +419,7 @@ textarea.input{min-height:90px;resize:vertical}
 const CONFIG = {
   SUPABASE_URL: 'https://uypuehrhxwybqjfpynez.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_FfFz56_dk2M1c1uurXVYwg_raaLjJog', // 공개용 키 (원래 공개되는 값)
+  DISCORD_INVITE: 'https://discord.gg/xCsAeKm7Fy', // 로켓단의 뒷세계 디스코드 초대 링크 (만료되지 않는 링크로)
 };
 const CONFIGURED = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY);
 const DEMO = !CONFIGURED || new URLSearchParams(location.search).has('demo');
@@ -878,6 +887,7 @@ function makeSupaApi(){
     listBanned(){ return run(sb.from('banned_users').select('*').order('created_at', { ascending:false })); },
     async notify(type, id){ try { return await call('/api/notify', { type, id }); } catch (e) { return { ok:false, error:e.message }; } },
     async msStart(){ const j = await call('/api/ms-start'); location.href = j.url; },
+    async discordMember(){ try { return await call('/api/discord-member'); } catch { return { configured:false }; } },
   };
 }
 
@@ -1023,6 +1033,7 @@ function makeDemoApi(){
     async unban(did){ D.banned = D.banned.filter(b => b.discord_id !== did); D.profiles.forEach(p => { if (p.discord_id === did) p.banned = false; }); return { ok:true }; },
     async listBanned(){ await pause(); return D.banned.map(b => ({ ...b })); },
     async notify(){ await pause(); return { ok:true, demo:true, dm:{ owner:true, requester:true, author:true } }; },
+    async discordMember(){ await pause(); return { configured:true, member: ['rocket', 'admin'].includes(role) }; },
     async msStart(){
       const p = prof(meId());
       toast('(데모) Microsoft 로그인 중… 실제로는 Microsoft 로그인 창으로 이동해요.');
@@ -1108,9 +1119,56 @@ async function renderView(){
 async function refresh(){
   try { S.me = await S.api.me(); }
   catch (e) { S.me = null; toast(e.message, 'err'); }
+  S.dc = null;
   renderShell();
   await renderView();
+  if (S.me && !acc().banned) checkDiscord();
 }
+
+/* ---------- 뒷세계 디스코드 참가 안내 ---------- */
+// S.dc = { configured, member: true | false | null }
+const DC_DISMISS = 'dcJoinDismissed';
+const dcDismissed = () => { try { return localStorage.getItem(DC_DISMISS) === '1'; } catch { return false; } };
+async function checkDiscord(force=false){
+  const key = `dc:${S.me?.id}`;
+  if (!force) {
+    try { const c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && Date.now() - c.at < 10*60e3) { S.dc = c.v; return updateDcUi(); } } catch {}
+  }
+  const v = await S.api.discordMember();
+  S.dc = { configured:!!v.configured, member: v.member ?? null };
+  try { sessionStorage.setItem(key, JSON.stringify({ at:Date.now(), v:S.dc })); } catch {}
+  updateDcUi();
+}
+// 안내 띠를 보여줄지: 서버 확인이 되면 '없는 사람'에게만, 아니면 닫기 전까지 모두에게
+function needDcBanner(){
+  if (!S.dc || !S.me || acc().banned) return false;
+  if (S.dc.configured && S.dc.member === true) return false;
+  if (S.dc.configured && S.dc.member === false) return true;
+  return !dcDismissed();
+}
+function dcBanner(){
+  const known = S.dc?.configured && S.dc.member === false;
+  return `<div class="dcban" id="dcban">
+    <span class="dcico" aria-hidden="true">💬</span>
+    <span class="txt"><b>DM 알림을 받으려면 로켓단의 뒷세계 디스코드에 들어와 주세요.</b>
+      <small>${known ? '아직 서버에 없어서 의뢰·예약 알림 DM을 받을 수 없어요.' : '의뢰 수락, 대회 참가, 거래 예약 알림이 디스코드 DM으로 가요.'}</small></span>
+    <a class="btn sm dc" href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">디스코드 참가</a>
+    ${known ? '<button class="btn sm ghost" data-act="dc-recheck">참가했어요</button>' : '<button class="btn sm ghost" data-act="dc-dismiss">이미 들어왔어요</button>'}
+  </div>`;
+}
+function dcStatusLine(){
+  if (!S.dc) return '<span class="muted" style="font-size:13px">서버 참가 여부 확인 중…</span>';
+  if (S.dc.configured && S.dc.member === true) return '<span class="chip open">뒷세계 디스코드 참가 중 ✓</span>';
+  if (S.dc.configured && S.dc.member === false) return '<span class="chip gold">아직 서버에 없어요 — DM 알림을 못 받아요</span>';
+  return '<span class="muted" style="font-size:13px">DM 알림은 뒷세계 디스코드에 들어와 있어야 받을 수 있어요.</span>';
+}
+function updateDcUi(){
+  const slot = $('#dcban-slot');
+  if (slot) slot.innerHTML = needDcBanner() ? dcBanner() : '';
+  const st = $('#dc-status');
+  if (st) st.innerHTML = dcStatusLine();
+}
+const DM_HINT = '<span class="hint" style="display:block;margin-top:4px">💬 알림 DM은 로켓단의 뒷세계 디스코드에 들어와 있어야 받을 수 있어요.</span>';
 
 /* ---------- 로그인 전 ---------- */
 function landing(){
@@ -1154,6 +1212,7 @@ async function viewHome(){
   const me = S.me, a = acc();
   const openCount = recent.filter(isOpen).length;
   return `
+  <div id="dcban-slot">${needDcBanner() ? dcBanner() : ''}</div>
   ${a.verified ? '' : gate()}
   <section class="hero">
     <div class="main">
@@ -1529,7 +1588,10 @@ function viewMe(){
   <div class="two">
     <div class="panel"><h3>디스코드</h3>
       <div class="linked">${avatar(me)}<b>${esc(me.discord_name || '디스코드 사용자')}</b><span class="chip open">연결됨</span></div>
-      <p>알림과 거래 예약 DM이 이 디스코드 계정으로 가요.</p>
+      <p>알림과 거래 예약 DM이 이 디스코드 계정으로 가요. 단, <b>로켓단의 뒷세계 디스코드</b>에 들어와 있어야 받을 수 있어요.</p>
+      <div class="linked"><a class="btn sm dc" href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">뒷세계 디스코드 가입</a>
+        <span id="dc-status">${dcStatusLine()}</span>
+        ${S.dc?.configured && S.dc.member === false ? '<button class="btn sm ghost" data-act="dc-recheck">다시 확인</button>' : ''}</div>
       <div class="linked"><span class="muted" style="font-size:13px">권한</span>
         <span class="chip ${a.admin ? 'gold' : a.rocket ? 'red' : ''}">${a.fixed ? '고정 관리자' : ROLE_NAME[a.admin ? 'admin' : a.rocket ? 'rocket' : 'member']}</span></div>
     </div>
@@ -1667,6 +1729,17 @@ const ACTIONS = {
       },
     });
   },
+  'dc-dismiss'(){
+    try { localStorage.setItem(DC_DISMISS, '1'); } catch {}
+    updateDcUi(); toast('알림 안내를 닫았어요. 내 정보에서 언제든 가입할 수 있어요.');
+  },
+  async 'dc-recheck'(d, el){
+    el.disabled = true;
+    await checkDiscord(true);
+    if (S.dc?.member === true) toast('뒷세계 디스코드 참가가 확인됐어요!');
+    else if (S.dc?.member === false) toast('아직 서버에서 찾을 수 없어요. 참가 후 잠시 뒤에 다시 눌러 주세요.', 'warn');
+    if (currentTab() === 'me') renderView(); else el.disabled = false;
+  },
   async 'edit-notice'(d){
     const n = await S.api.getPost(Number(d.id));
     if (!n) return toast('공지를 찾을 수 없어요.', 'err');
@@ -1689,13 +1762,13 @@ const ACTIONS = {
     const board = location.hash.slice(1); const B = BOARDS[board];
     openForm({
       title: B.join,
-      sub: `<b>${esc(card?.querySelector('h3')?.textContent || '')}</b> 글쓴이에게 디스코드 DM으로 알려드려요.`,
+      sub: `<b>${esc(card?.querySelector('h3')?.textContent || '')}</b> 글쓴이에게 디스코드 DM으로 알려드려요.${DM_HINT}`,
       html: `<div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" placeholder="${esc(B.msgPh)}"></textarea></div>`,
       submit: B.join,
       async onSubmit(f){
         const e = await S.api.createEntry(id, (f.message || '').trim());
         const n = await S.api.notify('entry', e.id);
-        toast(n.ok && n.dm?.author !== false ? '신청했어요. 글쓴이에게 알림을 보냈어요.' : '신청은 됐지만 디스코드 알림은 보내지 못했어요.', n.ok && n.dm?.author !== false ? '' : 'warn');
+        toast(n.ok && n.dm?.author !== false ? '신청했어요. 글쓴이에게 알림을 보냈어요.' : '신청은 됐지만 글쓴이에게 디스코드 알림을 보내지 못했어요. (글쓴이가 뒷세계 디스코드에 없거나 DM을 막아 둠)', n.ok && n.dm?.author !== false ? '' : 'warn');
         renderView();
       },
     });
@@ -1759,7 +1832,7 @@ const ACTIONS = {
     const have = card.dataset.kind === 'have';
     openForm({
       title: have ? '받을게요' : '줄게요',
-      sub: '확인을 누르면 두 분의 디스코드 DM으로 예약이 전송돼요.',
+      sub: '확인을 누르면 두 분의 디스코드 DM으로 예약이 전송돼요.' + DM_HINT,
       html: `<div class="summary"><b>${esc(card.dataset.pokemon)}</b> · ${have ? `${esc(card.dataset.owner)}님이 주고, 내가 받아요` : `내가 주고, ${esc(card.dataset.owner)}님이 받아요`}</div>
         <div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" required placeholder="예: 저녁 8시에 접속 가능합니다"></textarea></div>`,
       submit: '확인',
@@ -1769,7 +1842,7 @@ const ACTIONS = {
         if (!n.ok) toast(`예약은 저장됐지만 디스코드 알림을 보내지 못했어요. (${n.error || '알 수 없는 오류'})`, 'warn');
         else if (n.dm && (!n.dm.owner || !n.dm.requester)) {
           const miss = [!n.dm.owner && card.dataset.owner, !n.dm.requester && '나'].filter(Boolean).join(', ');
-          toast(`예약됐어요. 다만 ${miss}에게는 DM을 못 보냈어요. (디스코드 서버 미가입 또는 DM 차단)`, 'warn');
+          toast(`예약됐어요. 다만 ${miss}에게는 DM을 못 보냈어요. (뒷세계 디스코드에 없거나 DM을 막아 둠 — 내 정보에서 디스코드 가입)`, 'warn');
         } else toast('예약됐어요! 두 분의 디스코드로 알림을 보냈어요.');
         renderView();
       },

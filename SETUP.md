@@ -15,6 +15,7 @@ api/ms-start.js      Microsoft 로그인 시작
 api/ms-callback.js   Microsoft → 마인크래프트 닉네임 확인
 api/keepalive.js     Supabase 잠김 방지 (매일 자동 실행)
 api/admin-member.js  관리자: 회원 삭제 · 차단 해제
+api/discord-member.js 회원의 뒷세계 디스코드 참가 여부 확인
 vercel.json          매일 keepalive 실행 예약
 package.json         서버 함수 설정 (이미 있으면 "type": "module"만 추가)
 .vercelignore        아래 두 파일은 사이트에 공개하지 않음
@@ -79,6 +80,7 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 | `DISCORD_BOT_TOKEN` | 봇 토큰 |
 | `DISCORD_WEBHOOK_URL` | 웹후크 URL |
 | `SITE_URL` | `https://team-rocket-underworld.vercel.app` (끝에 / 없이) |
+| `DISCORD_GUILD_ID` | (선택) 뒷세계 디스코드 서버 ID. 넣으면 서버에 없는 회원에게만 참가 안내가 보이고, 내 정보에 참가 여부가 표시됨. 없으면 모두에게 안내(닫기 가능) |
 | `AUTH_STATE_SECRET` | 아무 긴 무작위 문자열 (예: 비밀번호 생성기로 40자) |
 | `CRON_SECRET` | (선택) 아무 무작위 문자열. 넣으면 keepalive를 Vercel 크론만 호출할 수 있음 |
 
