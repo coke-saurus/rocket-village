@@ -1,7 +1,7 @@
 // POST /api/notify  { type, id }
 // 사이트에서 글·신청·예약을 만든 직후 호출 → 디스코드로 알림
 import {
-  db, getUser, getAccess, claimNotify, sendDM, postChannel,
+  db, getUser, getAccess, claimNotify, sendDM, postChannel, discord,
   who, clip, siteUrl, httpError, RED, GOLD, env,
 } from './_lib.js';
 
@@ -204,7 +204,24 @@ async function onBotTest(user) {
     content: '🚀 로켓단 봇 연결 테스트 성공! 이 메시지가 보이면 거래 예약 알림도 받을 수 있어요.',
   });
   const channel = await postChannel({ content: '🚀 로켓단 알림 채널 연결 테스트입니다.' });
-  return { gateway, dm, channel };
+
+  // 서버 자동 참가 준비 상태: 서버 ID와 봇의 '초대 코드 만들기' 권한
+  let guild = '미설정 (DISCORD_GUILD_ID)';
+  const gid = process.env.DISCORD_GUILD_ID;
+  if (gid) {
+    try {
+      const g = await discord(`/guilds/${encodeURIComponent(gid)}`);
+      const me = await discord(`/guilds/${encodeURIComponent(gid)}/members/@me`);
+      const roles = await discord(`/guilds/${encodeURIComponent(gid)}/roles`);
+      const perms = roles.filter((r) => r.id === gid || me.roles.includes(r.id))
+        .reduce((a, r) => a | BigInt(r.permissions), 0n);
+      const can = (perms & 8n) !== 0n || (perms & 1n) !== 0n;   // 관리자 또는 초대 코드 만들기
+      guild = can ? `ok (${g.name})` : `${g.name}: 봇에게 '초대 코드 만들기' 권한이 없어요`;
+    } catch (e) {
+      guild = `실패: 봇이 이 서버에 없거나 서버 ID가 틀려요 (${e.message.slice(0, 60)})`;
+    }
+  }
+  return { gateway, dm, channel, guild };
 }
 
 // 디스코드는 봇이 게이트웨이에 한 번이라도 접속해야 메시지를 보낼 수 있음

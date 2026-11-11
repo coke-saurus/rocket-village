@@ -155,6 +155,7 @@ details.ent[open] summary::before{content:"▾ "}
 .dcban .txt small{color:#c4c8f5;font-size:12.5px}
 .btn.dc{background:#5865f2;border-color:#5865f2;color:#fff}
 .btn.dc:hover{background:#6d78f5}
+.dcban .inv{font-size:12px;color:#c4c8f5;flex-basis:100%;text-align:right}
 #dcban-slot:not(:empty) + .hero,#dcban-slot:not(:empty) + .gate{margin-top:14px}
 #dcban-slot:empty{display:none}
 .pinned{margin-top:34px;border:1px solid var(--line);border-radius:12px;background:rgba(21,21,27,.92);padding:12px 12px 10px}
@@ -834,7 +835,16 @@ function makeSupaApi(){
   return {
     demo:false,
     onAuth(cb){ sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN' || ev === 'SIGNED_OUT') cb(); }); },
-    login(){ return sb.auth.signInWithOAuth({ provider:'discord', options:{ redirectTo: location.origin + location.pathname } }); },
+    // guilds.join: 로그인하면서 로켓단의 뒷세계 디스코드에 자동 참가
+    login(){ return sb.auth.signInWithOAuth({ provider:'discord', options:{ redirectTo: location.origin + location.pathname, scopes:'guilds.join' } }); },
+    async autoJoin(){
+      const { data:{ session } } = await sb.auth.getSession();
+      const t = session?.provider_token;
+      if (!t) return null;
+      const k = 'dcJoinTried:' + t.slice(-16);
+      try { if (sessionStorage.getItem(k)) return null; sessionStorage.setItem(k, '1'); } catch {}
+      try { return await call('/api/discord-join', { provider_token:t }); } catch (e) { return { ok:false, configured:true, error:e.message }; }
+    },
     async logout(){ await sb.auth.signOut(); },
     async me(){
       const { data:{ session } } = await sb.auth.getSession();
@@ -938,7 +948,8 @@ function makeDemoApi(){
       { id:1, listing_id:2, requester_id:'u3', message:'오늘 밤 10시에 접속해요!', status:'pending', created_at:t(1) },
     ],
   };
-  let role = 'new', loggedIn = false, seq = 100;
+  let role = 'new', loggedIn = false, seq = 100, pendingJoin = false;
+  const joined = new Set();
   const meId = () => ({ new:'u5', member:'u4', rocket:'u2', admin:'u1' })[role];
   const prof = (id) => D.profiles.find(p => p.id === id);
   const pub = (p) => p ? { id:p.id, mc_name:p.mc_name, discord_name:p.discord_name, discord_avatar:null } : null;
@@ -957,7 +968,7 @@ function makeDemoApi(){
     get role(){ return role; }, get loggedIn(){ return loggedIn; },
     setRole(r){ role = r; loggedIn = true; },
     onAuth(){},
-    async login(){ await pause(); loggedIn = true; role = 'new'; toast('(데모) 디스코드 로그인 완료 — 처음 가입한 회원 시점이에요.'); },
+    async login(){ await pause(); loggedIn = true; role = 'new'; pendingJoin = true; toast('(데모) 디스코드 로그인 완료 — 처음 가입한 회원 시점이에요.'); },
     async logout(){ loggedIn = false; },
     async me(){ if (!loggedIn) return null; const p = prof(meId()); if (!p) return null; return { ...p, acc:access(p) }; },
     async getPost(id){ await pause(); const p = byId(D.posts, id); return p ? { ...p, author:pub(prof(p.author_id)) } : null; },
@@ -1033,7 +1044,9 @@ function makeDemoApi(){
     async unban(did){ D.banned = D.banned.filter(b => b.discord_id !== did); D.profiles.forEach(p => { if (p.discord_id === did) p.banned = false; }); return { ok:true }; },
     async listBanned(){ await pause(); return D.banned.map(b => ({ ...b })); },
     async notify(){ await pause(); return { ok:true, demo:true, dm:{ owner:true, requester:true, author:true } }; },
-    async discordMember(){ await pause(); return { configured:true, member: ['rocket', 'admin'].includes(role) }; },
+    async discordMember(){ await pause(); return { configured:true, member: ['rocket', 'admin'].includes(role) || joined.has(role) }; },
+    async autoJoin(){ if (!pendingJoin) return null; pendingJoin = false; await pause(); joined.add(role); return { ok:true, configured:true, joined:true }; },
+    async rejoin(){ pendingJoin = true; },
     async msStart(){
       const p = prof(meId());
       toast('(데모) Microsoft 로그인 중… 실제로는 Microsoft 로그인 창으로 이동해요.');
@@ -1122,7 +1135,12 @@ async function refresh(){
   S.dc = null;
   renderShell();
   await renderView();
-  if (S.me && !acc().banned) checkDiscord();
+  if (S.me && !acc().banned) {
+    const j = await S.api.autoJoin?.();
+    if (j?.joined) toast('🎉 로켓단의 뒷세계 디스코드에 자동으로 참가했어요! 이제 DM 알림을 받을 수 있어요.');
+    else if (j && j.configured && !j.ok && j.error) toast(`디스코드 자동 참가 실패: ${j.error}`, 'warn');
+    checkDiscord(!!j);
+  }
 }
 
 /* ---------- 뒷세계 디스코드 참가 안내 ---------- */
@@ -1152,8 +1170,9 @@ function dcBanner(){
     <span class="dcico" aria-hidden="true">💬</span>
     <span class="txt"><b>DM 알림을 받으려면 로켓단의 뒷세계 디스코드에 들어와 주세요.</b>
       <small>${known ? '아직 서버에 없어서 의뢰·예약 알림 DM을 받을 수 없어요.' : '의뢰 수락, 대회 참가, 거래 예약 알림이 디스코드 DM으로 가요.'}</small></span>
-    <a class="btn sm dc" href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">디스코드 참가</a>
+    <button class="btn sm dc" data-act="dc-join">디스코드 참가</button>
     ${known ? '<button class="btn sm ghost" data-act="dc-recheck">참가했어요</button>' : '<button class="btn sm ghost" data-act="dc-dismiss">이미 들어왔어요</button>'}
+    ${known ? `<a class="inv" href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">초대 링크로 직접 들어가기</a>` : ''}
   </div>`;
 }
 function dcStatusLine(){
@@ -1179,7 +1198,7 @@ function landing(){
     <p>코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 · 경매 게시판</p>
     <button class="btn discord" data-act="login">디스코드로 로그인</button>
     <ol class="steps">
-      <li><b>1</b>디스코드 로그인</li>
+      <li><b>1</b>디스코드 로그인<small>뒷세계 디스코드 자동 참가</small></li>
       <li><b>2</b>Microsoft 연동<small>마인크래프트 닉네임 확인</small></li>
       <li><b>3</b>활동 시작</li>
     </ol>
@@ -1589,9 +1608,10 @@ function viewMe(){
     <div class="panel"><h3>디스코드</h3>
       <div class="linked">${avatar(me)}<b>${esc(me.discord_name || '디스코드 사용자')}</b><span class="chip open">연결됨</span></div>
       <p>알림과 거래 예약 DM이 이 디스코드 계정으로 가요. 단, <b>로켓단의 뒷세계 디스코드</b>에 들어와 있어야 받을 수 있어요.</p>
-      <div class="linked"><a class="btn sm dc" href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">뒷세계 디스코드 가입</a>
+      <div class="linked"><button class="btn sm dc" data-act="dc-join">뒷세계 디스코드 가입</button>
         <span id="dc-status">${dcStatusLine()}</span>
         ${S.dc?.configured && S.dc.member === false ? '<button class="btn sm ghost" data-act="dc-recheck">다시 확인</button>' : ''}</div>
+      <p class="hint" style="margin:-4px 0 10px">버튼이 안 되면 <a href="${esc(CONFIG.DISCORD_INVITE)}" target="_blank" rel="noopener">초대 링크</a>로 직접 들어올 수 있어요.</p>
       <div class="linked"><span class="muted" style="font-size:13px">권한</span>
         <span class="chip ${a.admin ? 'gold' : a.rocket ? 'red' : ''}">${a.fixed ? '고정 관리자' : ROLE_NAME[a.admin ? 'admin' : a.rocket ? 'rocket' : 'member']}</span></div>
     </div>
@@ -1728,6 +1748,13 @@ const ACTIONS = {
         if (d.board === 'notice') location.hash = `#notice/${post.id}`; else renderView();
       },
     });
+  },
+  async 'dc-join'(){
+    // 서버 확인이 설정돼 있으면 디스코드 승인 한 번으로 자동 참가, 아니면 초대 링크
+    if (!S.dc?.configured) { window.open(CONFIG.DISCORD_INVITE, '_blank', 'noopener'); return; }
+    if (S.api.demo) { await S.api.rejoin(); toast('(데모) 실제로는 디스코드 승인 화면으로 이동해요.'); return refresh(); }
+    toast('디스코드 승인 화면으로 이동해요. "서버에 참가"를 승인해 주세요.');
+    S.api.login();
   },
   'dc-dismiss'(){
     try { localStorage.setItem(DC_DISMISS, '1'); } catch {}
@@ -1900,7 +1927,7 @@ const ACTIONS = {
     el.disabled = false;
     if (!n.ok) return toast(`실패: ${n.error}`, 'err');
     if (n.demo) return toast('데모 모드라 실제로 보내지 않았어요.', 'warn');
-    toast(`봇 연결: ${n.gateway} · 내 DM: ${n.dm ? '성공' : '실패'} · 알림 채널: ${n.channel ? '성공' : '실패/미설정'}`, n.dm ? '' : 'warn');
+    toast(`봇 연결: ${n.gateway} · 내 DM: ${n.dm ? '성공' : '실패'} · 알림 채널: ${n.channel ? '성공' : '실패/미설정'} · 서버 자동 참가: ${n.guild || '확인 안 됨'}`, n.dm && String(n.guild).startsWith('ok') ? '' : 'warn');
   },
   async 'ms-link'(d, el){
     el.disabled = true;
