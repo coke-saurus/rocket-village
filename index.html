@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>로켓단의 뒷세계 · Team Rocket UnderWorld</title>
-<meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 포켓몬 의뢰, PVP 대회, 단원 전용 거래소">
+<meta name="description" content="Team Rocket UnderWorld · 코블몬 서버 로켓단의 포켓몬 의뢰, PVP 대회, 경매, 단원 전용 거래소">
 <meta property="og:title" content="로켓단의 뒷세계 · Team Rocket UnderWorld">
-<meta property="og:description" content="코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 게시판">
+<meta property="og:description" content="코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 · 경매 게시판">
 <meta property="og:image" content="/assets/og.jpg">
 <meta name="theme-color" content="#0b0b0e">
 <link rel="icon" type="image/png" href="assets/favicon.png">
@@ -149,6 +149,30 @@ details.ent[open] summary::before{content:"▾ "}
 .feed a:hover{border-color:var(--line2)}
 .feed .t{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .feed .when{font:500 12px/1 var(--mono);color:var(--muted);flex:none}
+.pinned{margin-top:22px;border:1px solid rgba(224,40,47,.55);border-radius:12px;background:linear-gradient(180deg,rgba(224,40,47,.12),rgba(21,21,27,.92));padding:12px 12px 10px}
+.pin-head{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--red2);margin:2px 4px 10px}
+.pinned + .hero{margin-top:14px}
+.nlist{display:flex;flex-direction:column;gap:6px}
+.nrow{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px;text-decoration:none;min-width:0}
+.nrow:hover{border-color:var(--line2);background:var(--panel2)}
+.nrow.pin{border-color:rgba(224,40,47,.4)}
+.nrow .t{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nrow .by2{font-size:12px;color:var(--muted);white-space:nowrap}
+.nrow .when{font:500 12px/1 var(--mono);color:var(--dim);white-space:nowrap}
+.nrow .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex:none}
+.nrow .pinmark{flex:none}
+.toolbar .more{font-size:13px;color:var(--muted);text-decoration:none}
+.toolbar .more:hover{color:var(--text)}
+.nav-back{display:flex;gap:6px;margin:18px 0 12px}
+.notice-page{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:12px;padding:24px 26px}
+.notice-page.pin{border-top-color:var(--red)}
+.notice-page .code{font:700 11px/1 var(--mono);letter-spacing:.2em;color:var(--red2)}
+.notice-page h1{font:400 30px/1.25 var(--display);margin:10px 0 12px;word-break:break-word}
+.notice-page .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding-bottom:16px;border-bottom:1px solid var(--line)}
+.notice-page .meta .av{width:24px;height:24px;font-size:11px}
+.notice-page .meta b{color:var(--text)}
+.notice-page .nbody{margin-top:18px;white-space:pre-wrap;word-break:break-word;line-height:1.75;font-size:15px;color:#dddbe6}
+.notice-page .actions{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 .notice{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:9px;padding:14px 16px}
 .notice h3{margin:0 0 4px;font-size:16px}
 .notice p{margin:0;white-space:pre-wrap;color:#c9c7d3;font-size:14px}
@@ -312,6 +336,9 @@ textarea.input{min-height:90px;resize:vertical}
 @media (max-width:760px){
   .hero,.two{grid-template-columns:1fr}
   .hero h1{font-size:32px}
+  .notice-page{padding:18px 16px}
+  .notice-page h1{font-size:24px}
+  .nrow .by2{display:none}
   .landing h1{font-size:30px}
   .brand b{font-size:18px;white-space:nowrap}
   .brand img{width:38px;height:38px}
@@ -376,8 +403,8 @@ const BOARDS = {
              deadline:true,
              fields:[{k:'item',label:'경매 물품',ph:'예: 이로치 리자몽 Lv.60'},{k:'when',label:'일시',ph:'예: 11/2(일) 오후 3시'},{k:'start',label:'시작가',ph:'예: 10,000'}] },
 };
-// 임시로 숨긴 게시판 (서버 규칙상 경매 금지). 다시 열려면 여기서 'auction'을 지우세요.
-const HIDDEN_BOARDS = new Set(['auction']);
+// 임시로 숨길 게시판 (예: new Set(['auction'])). 비어 있으면 모두 보임.
+const HIDDEN_BOARDS = new Set([]);
 const shownBoards = (list) => list.filter(b => !HIDDEN_BOARDS.has(b));
 
 const ROLE_NAME = { member:'일반', rocket:'로켓단', admin:'관리자' };
@@ -794,6 +821,7 @@ function makeSupaApi(){
         .in('board', [].concat(boards)).order('created_at', { ascending:false }).limit(limit));
     },
     createPost(d){ return run(sb.from('posts').insert(d).select().single()); },
+    getPost(id){ return run(sb.from('posts').select(`*, ${AUTH}`).eq('id', id).maybeSingle()); },
     setPostStatus(id, status){ return run(sb.from('posts').update({ status }).eq('id', id)); },
     updatePost(id, patch){ return run(sb.from('posts').update(patch).eq('id', id)); },
     deletePost(id){ return run(sb.from('posts').delete().eq('id', id)); },
@@ -844,7 +872,9 @@ function makeDemoApi(){
       { id:'u6', discord_id:'6', discord_name:'지우개', mc_name:'Eraser_99', mc_verified:false, role:'member', created_at:t(2) },
     ],
     posts:[
-      { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'포켓몬 의뢰와 PVP 대회는 여기서 확인하세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(30) },
+      { id:1, board:'notice', title:'Team Rocket UnderWorld 사이트 오픈!', body:'포켓몬 의뢰, PVP 대회, 경매는 여기서 확인하세요.\n로켓단 전용 거래소는 단원만 볼 수 있어요.', meta:{ pinned:true }, status:'open', author_id:'u1', created_at:t(30) },
+      { id:6, board:'notice', title:'포켓몬 의뢰 가이드', body:'[의뢰 올리기]\n1. 포켓몬 의뢰 탭 → + 글쓰기\n2. 포켓몬을 검색해서 선택\n\n[보수 읽는 법]\n100골드/-1 → 요구값보다 1 낮을 때마다 100골드 덜 받아요', meta:{}, status:'open', author_id:'u1', created_at:t(8) },
+      { id:7, board:'notice', title:'11월 정기 점검 안내', body:'11/15(토) 오전 6시~8시 서버 점검이 있어요.', meta:{}, status:'open', author_id:'u1', created_at:t(3) },
       { id:2, board:'request', title:'✨ 이브이', body:'마을 창고 앞에서 거래해요.', status:'open', author_id:'u4', created_at:t(5), closes_at:after(6*24 + 19),
         meta:{ pk:{ ...demoPk(133, '이브이', true, { n:'적응력', hidden:false }, { k:'timid', n:'겁쟁이', up:'spe', dn:'atk' }, { hp:31, atk:null, def:31, spe:31, spd:31, spa:31 }), level:50 },
                reward:{ gold:5000, less:100, strict:false, more:50, lvLess:20, lvStrict:false, other:'' } } },
@@ -893,6 +923,7 @@ function makeDemoApi(){
     async login(){ await pause(); loggedIn = true; role = 'new'; toast('(데모) 디스코드 로그인 완료 — 처음 가입한 회원 시점이에요.'); },
     async logout(){ loggedIn = false; },
     async me(){ if (!loggedIn) return null; const p = prof(meId()); if (!p) return null; return { ...p, acc:access(p) }; },
+    async getPost(id){ await pause(); const p = byId(D.posts, id); return p ? { ...p, author:pub(prof(p.author_id)) } : null; },
     async listPosts(boards, limit=60){
       await pause(); const bs = [].concat(boards);
       return D.posts.filter(p => bs.includes(p.board)).sort(newest).slice(0, limit).map(p => ({
@@ -991,8 +1022,10 @@ function tabList(){
 }
 function currentTab(){
   const h = location.hash.slice(1) || 'home';
+  if (/^notice(\/\d+)?$/.test(h) && !acc().banned) return 'notice';
   return tabList().some(([k]) => k === h) ? h : 'home';
 }
+const noticeId = () => Number((location.hash.match(/^#notice\/(\d+)$/) || [])[1]) || null;
 
 function renderShell(){
   const demo = $('#demo');
@@ -1010,7 +1043,7 @@ function renderShell(){
     ${a.banned ? '<span class="chip red">이용 정지</span>' : a.fixed ? '<span class="chip gold">고정 관리자</span>' : a.admin ? '<span class="chip gold">관리자</span>' : a.rocket ? '<span class="chip red">로켓단</span>' : !a.verified ? '<span class="chip gold">미연동</span>' : ''}
     <a class="who" href="#me">${avatar(me)}<span class="nm">${esc(nameOf(me))}</span></a>
     <button class="btn sm ghost" data-act="logout">로그아웃</button>`;
-  const cur = currentTab();
+  const cur = currentTab() === 'notice' ? 'home' : currentTab();
   $('#tabs').innerHTML = !me ? '' : tabList().map(([k, label, cls]) =>
     `<a class="tab ${cls||''} ${k === cur ? 'on' : ''}" href="#${k}">${label}</a>`).join('');
 }
@@ -1026,17 +1059,19 @@ async function renderView(){
     return;
   }
   const tab = currentTab();
-  document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${tab}`));
+  const navTab = tab === 'notice' ? 'home' : tab;
+  document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${navTab}`));
   $('.tab.on')?.scrollIntoView({ block:'nearest', inline:'center' });
   v.innerHTML = '<div class="loading">LOADING…</div>';
   try {
     let html = '';
     if (tab === 'home') html = await viewHome();
+    else if (tab === 'notice') html = noticeId() ? await viewNotice(noticeId()) : await viewNoticeList();
     else if (BOARDS[tab]) html = await viewBoard(tab);
     else if (tab === 'rocket') html = await viewRocket();
     else if (tab === 'admin') html = await viewAdmin();
     else if (tab === 'me') html = viewMe();
-    const banner = !acc().verified && tab !== 'home' && tab !== 'me' ? gateBanner() : '';
+    const banner = !acc().verified && !['home', 'me', 'notice'].includes(tab) ? gateBanner() : '';
     v.innerHTML = banner + html;
   } catch (e) {
     v.innerHTML = `<div class="empty">불러오지 못했어요: ${esc(e.message)}</div>`;
@@ -1056,7 +1091,7 @@ function landing(){
     <div class="emb"><img src="assets/logo.webp" alt="로켓단 로고" width="640" height="640"></div>
     <h1>로켓단의 뒷세계</h1>
     <div class="landing-en">TEAM ROCKET UNDERWORLD</div>
-    <p>코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 게시판</p>
+    <p>코블몬 서버 로켓단의 포켓몬 의뢰 · PVP 대회 · 경매 게시판</p>
     <button class="btn discord" data-act="login">디스코드로 로그인</button>
     <ol class="steps">
       <li><b>1</b>디스코드 로그인</li>
@@ -1084,18 +1119,22 @@ function gateBanner(){
 /* ---------- 홈 ---------- */
 async function viewHome(){
   const [notices, recent] = await Promise.all([
-    S.api.listPosts('notice', 3),
+    S.api.listPosts('notice', 60),
     S.api.listPosts(shownBoards(['request','pvp','auction']), 8),
   ]);
+  const pinned = notices.filter(n => n.meta?.pinned);
+  const latest = notices.filter(n => !n.meta?.pinned);
   const me = S.me, a = acc();
   const openCount = recent.filter(isOpen).length;
   return `
   ${a.verified ? '' : gate()}
+  ${pinned.length ? `<section class="pinned"><div class="pin-head">📌 주요 공지</div>
+    <div class="nlist">${pinned.map(noticeRow).join('')}</div></section>` : ''}
   <section class="hero">
     <div class="main">
       <div class="code">TEAM ROCKET UNDERWORLD</div>
       <h1>어서 와, ${esc(nameOf(me))}</h1>
-      <p>포켓몬 의뢰를 맡기고, PVP 대회에 나가 보세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
+      <p>포켓몬 의뢰를 맡기고, PVP 대회에 나가고, 경매에 참여해 보세요. 거래 예약은 디스코드 DM으로 바로 전달돼요.</p>
     </div>
     <div class="stat">
       <div class="row"><span>내 권한</span><b>${a.fixed ? '고정 관리자' : a.admin ? '관리자' : a.rocket ? '로켓단' : '일반'}</b></div>
@@ -1105,15 +1144,11 @@ async function viewHome(){
     </div>
   </section>
 
-  <h2 class="sec">NOTICE · 공지</h2>
-  ${a.admin ? `<div class="toolbar"><span></span><button class="btn sm" data-act="write" data-board="notice">공지 쓰기</button></div>` : ''}
-  ${notices.length ? `<div class="feed">${notices.map(n => `
-    <div class="notice">
-      <h3>${esc(n.title)}</h3>
-      ${n.body ? `<p>${esc(n.body)}</p>` : ''}
-      <div class="meta"><span>${esc(nameOf(n.author))}</span><span class="mono">${ago(n.created_at)}</span>
-        ${a.admin ? `<button class="btn sm danger" data-act="del-post" data-id="${n.id}">삭제</button>` : ''}</div>
-    </div>`).join('')}</div>` : '<div class="empty">아직 공지가 없어요.</div>'}
+  <h2 class="sec">NOTICE · 최근 공지</h2>
+  <div class="toolbar"><a class="more" href="#notice">공지 전체 보기 →</a>
+    ${a.admin ? `<button class="btn sm" data-act="write" data-board="notice">공지 쓰기</button>` : ''}</div>
+  ${latest.length ? `<div class="nlist">${latest.slice(0, 3).map(noticeRow).join('')}</div>`
+    : `<div class="empty">${pinned.length ? '주요 공지 외에 새 공지가 없어요.' : '아직 공지가 없어요.'}</div>`}
 
   <h2 class="sec">LATEST · 최근 글</h2>
   ${recent.length ? `<div class="feed">${recent.map(p => `
@@ -1122,6 +1157,40 @@ async function viewHome(){
       <span class="t">${esc(p.title)}</span>
       <span class="when">${ago(p.created_at)}</span>
     </a>`).join('')}</div>` : '<div class="empty">아직 글이 없어요. 첫 의뢰를 올려보세요!</div>'}`;
+}
+
+
+/* ---------- 공지 ---------- */
+function noticeRow(n){
+  return `<a class="nrow ${n.meta?.pinned ? 'pin' : ''}" href="#notice/${n.id}">
+    ${n.meta?.pinned ? '<span class="pinmark">📌</span>' : '<span class="dot"></span>'}
+    <span class="t">${esc(n.title)}</span>
+    <span class="by2">${esc(nameOf(n.author))}</span>
+    <span class="when">${ago(n.created_at)}</span></a>`;
+}
+async function viewNoticeList(){
+  const all = await S.api.listPosts('notice', 200);
+  const list = [...all.filter(n => n.meta?.pinned), ...all.filter(n => !n.meta?.pinned)];
+  return `<div class="head"><div><div class="code">NOTICE · 공지</div><h1>공지 전체</h1><p>주요 공지가 맨 위에 있어요.</p></div>
+      <div style="display:flex;gap:8px"><a class="btn ghost" href="#home">← 홈으로</a>
+      ${acc().admin ? '<button class="btn red" data-act="write" data-board="notice">공지 쓰기</button>' : ''}</div></div>
+    ${list.length ? `<div class="nlist">${list.map(noticeRow).join('')}</div>` : '<div class="empty">아직 공지가 없어요.</div>'}`;
+}
+async function viewNotice(id){
+  const n = await S.api.getPost(id);
+  if (!n || n.board !== 'notice') return `<div class="head"><div><h1>공지를 찾을 수 없어요</h1><p>삭제됐거나 주소가 잘못됐어요.</p></div></div>
+    <a class="btn" href="#notice">공지 전체 보기</a>`;
+  const a = acc(), pinned = !!n.meta?.pinned;
+  return `<div class="nav-back"><a class="btn sm ghost" href="#home">← 홈으로</a><a class="btn sm ghost" href="#notice">공지 전체</a></div>
+    <article class="notice-page ${pinned ? 'pin' : ''}">
+      <div class="code">${pinned ? '📌 주요 공지' : 'NOTICE · 공지'}</div>
+      <h1>${esc(n.title)}</h1>
+      <div class="meta">${avatar(n.author)}<b>${esc(nameOf(n.author))}</b><span class="mono">${fmtDate(n.created_at)} · ${ago(n.created_at)}</span></div>
+      <div class="nbody">${n.body ? esc(n.body) : '<span class="muted">내용이 없어요.</span>'}</div>
+      ${a.admin ? `<div class="actions">
+        <button class="btn sm" data-act="notice-pin" data-id="${n.id}" data-pin="${pinned ? 0 : 1}">${pinned ? '고정 해제' : '📌 주요 공지로 고정'}</button>
+        <button class="btn sm danger" data-act="del-notice" data-id="${n.id}">삭제</button></div>` : ''}
+    </article>`;
 }
 
 /* ---------- 게시판 ---------- */
@@ -1467,20 +1536,34 @@ const ACTIONS = {
       html: `<div class="field"><label>제목</label><input class="input" name="title" maxlength="80" required></div>
         ${extra}
         ${B.deadline ? deadlineField() : ''}
-        <div class="field"><label>내용</label><textarea class="input" name="body" maxlength="2000" placeholder="자세한 내용 (선택)"></textarea></div>`,
+        <div class="field"><label>내용</label><textarea class="input" name="body" maxlength="2000" placeholder="자세한 내용 (선택)" ${d.board === 'notice' ? 'style="min-height:220px"' : ''}></textarea></div>
+        ${d.board === 'notice' ? `<div class="field"><label class="check"><input type="checkbox" name="pinned"> 📌 주요 공지로 고정</label>
+          <span class="hint">홈 맨 위 주요 공지 칸에 항상 보여요. 나중에 공지 페이지에서 고정을 풀 수 있어요.</span></div>` : ''}`,
       submit: '올리기',
       async onSubmit(f){
         const meta = {};
         B.fields.forEach(x => { const v = (f[`m_${x.k}`] || '').trim(); if (v) meta[x.k] = v; });
+        if (d.board === 'notice' && f.pinned) meta.pinned = true;
         const row = { board:d.board, title:f.title.trim(), body:(f.body || '').trim(), meta };
         const closes = readDeadline(f);
         if (closes) row.closes_at = closes;
         const post = await S.api.createPost(row);
         S.api.notify('post', post.id);
         toast('글을 올렸어요.');
-        renderView();
+        if (d.board === 'notice') location.hash = `#notice/${post.id}`; else renderView();
       },
     });
+  },
+  async 'notice-pin'(d){
+    const n = await S.api.getPost(Number(d.id));
+    const meta = { ...(n?.meta || {}) };
+    if (d.pin === '1') meta.pinned = true; else delete meta.pinned;
+    await S.api.updatePost(Number(d.id), { meta });
+    toast(d.pin === '1' ? '주요 공지로 고정했어요.' : '고정을 풀었어요.'); renderView();
+  },
+  async 'del-notice'(d){
+    if (!await ask('공지 삭제', '이 공지를 삭제할까요? 되돌릴 수 없어요.', '삭제', true)) return;
+    await S.api.deletePost(Number(d.id)); toast('삭제했어요.'); location.hash = '#notice';
   },
   join(d){
     const id = Number(d.id);

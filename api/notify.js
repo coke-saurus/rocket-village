@@ -91,7 +91,7 @@ async function onPost(user, id) {
     embeds: [{
       title: clip(`${BOARD[post.board] || post.board} · ${post.title}`, 250),
       description: post.body ? clip(post.body, 1500) : undefined,
-      url: siteUrl() ? `${siteUrl()}/#${post.board}` : undefined,
+      url: siteUrl() ? `${siteUrl()}/#${post.board === 'notice' ? `notice/${post.id}` : post.board}` : undefined,
       color: RED,
       fields,
       thumbnail: meta.pk?.icon ? { url: meta.pk.icon } : undefined,
