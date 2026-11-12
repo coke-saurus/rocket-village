@@ -23,8 +23,8 @@ export function entryButtons(entryId) {
   return [{
     type: 1,
     components: [
-      { type: 2, style: 3, label: '거래 수락', emoji: { name: '✅' }, custom_id: `ent:accept:${entryId}` },
-      { type: 2, style: 4, label: '거절', emoji: { name: '❌' }, custom_id: `ent:decline:${entryId}` },
+      { type: 2, style: 2, label: '거래 수락', emoji: { name: '✅' }, custom_id: `ent:accept:${entryId}` },
+      { type: 2, style: 2, label: '거절', emoji: { name: '❌' }, custom_id: `ent:decline:${entryId}` },
       ...link,
     ],
   }];
