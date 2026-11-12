@@ -17,8 +17,11 @@ api/keepalive.js     Supabase 잠김 방지 (매일 자동 실행)
 api/admin-member.js  관리자: 회원 삭제 · 차단 해제
 api/discord-member.js 회원의 뒷세계 디스코드 참가 여부 확인
 api/discord-join.js  디스코드 로그인 때 서버 자동 참가
+api/entry-decide.js  사이트에서 의뢰자가 판매자 수락을 '거래 수락 / 거절'
+api/discord-interact.js 디스코드 DM의 [거래 수락] [거절] 버튼 처리
+api/_entry.js, _fmt.js 위 두 기능과 알림 문구 공용 코드
 vercel.json          매일 keepalive 실행 예약
-package.json         서버 함수 설정 (이미 있으면 "type": "module"만 추가)
+package.json         서버 함수 설정 (@vercel/functions: 버튼 응답 뒤 남은 DM 마저 보내기)
 .vercelignore        아래 두 파일은 사이트에 공개하지 않음
 supabase/schema.sql  DB 테이블과 권한 규칙
 ```
@@ -33,6 +36,7 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 |---|---|---|
 | `supabase/migrations/002_pokemon_deadlines.sql` | 포켓몬 상세 정보, 자동 마감 시각(PVP·경매는 비워 두면 7일), 의뢰 7일 마감·1인 1의뢰 | Supabase → SQL Editor에 전체 붙여넣고 Run (여러 번 실행해도 안전) |
 | `supabase/migrations/003_admin_only_events.sql` | PVP 대회 · 경매 글은 관리자만 작성, 회원 삭제(글은 '탈퇴한 회원'으로 유지) · 차단 | 위와 같음 |
+| `supabase/migrations/004_request_decisions.sql` | 포켓몬 의뢰: 의뢰자의 거래 수락 / 거절 상태, 거절된 수락은 판매자가 지울 수 없음 | 위와 같음 (003을 먼저 실행) |
 
 처음 설치하는 경우에는 아래 1단계의 `schema.sql`에 위 내용이 이미 들어 있으니 따로 실행하지 않아도 됩니다.
 
@@ -61,6 +65,11 @@ GitHub 저장소 최상위에 그대로 올리면 됩니다. Vercel 프로젝트
 2. **OAuth2 → URL Generator**에서 scope `bot`만 체크하고(권한은 체크하지 않아도 됨), 생성된 링크로 봇을 마을 디스코드 서버에 초대합니다.
 3. DM은 **봇과 같은 서버에 있는 사람**에게만 갈 수 있습니다. 서버 설정에서 "서버 멤버가 보내는 다이렉트 메시지 허용"이 꺼져 있으면 DM이 막힙니다.
 
+**DM 버튼 (포켓몬 의뢰의 거래 수락 / 거절)**
+1. 개발자 포털 → **일반 정보(General Information)** 에서 **공개 키(Public Key)** 를 복사해 Vercel 환경변수 `DISCORD_PUBLIC_KEY`에 넣고 Redeploy합니다. 공개 키는 비밀값이 아닙니다.
+2. Redeploy가 끝난 뒤, 같은 화면의 **상호작용 엔드포인트 URL(Interactions Endpoint URL)** 에 `https://team-rocket-underworld.vercel.app/api/discord-interact`를 넣고 **변경 사항 저장**을 누릅니다. 디스코드가 주소를 바로 확인하므로, 저장이 거부되면 공개 키와 Redeploy 여부를 확인하세요.
+3. `DISCORD_PUBLIC_KEY`가 없으면 DM에는 '사이트에서 보기' 링크만 붙고, 거래 수락 / 거절은 사이트 의뢰 글에서 합니다.
+
 **알림 채널 (새 글, 인증 요청 소식)**
 - 알림 받을 채널의 **채널 편집 → 연동 → 웹후크 → 새 웹후크**에서 URL을 복사합니다 (`DISCORD_WEBHOOK_URL`).
 
@@ -82,6 +91,7 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 | `DISCORD_WEBHOOK_URL` | 웹후크 URL |
 | `SITE_URL` | `https://team-rocket-underworld.vercel.app` (끝에 / 없이) |
 | `DISCORD_GUILD_ID` | 뒷세계 디스코드 서버 ID. 넣으면 ① 디스코드 로그인 때 서버에 자동 참가 ② 서버에 없는 회원에게만 참가 안내 ③ 내 정보에 참가 여부 표시. 봇이 그 서버에 있고 '초대 코드 만들기' 권한이 있어야 함 |
+| `DISCORD_PUBLIC_KEY` | 개발자 포털 → 일반 정보의 **공개 키**. 포켓몬 의뢰 DM의 [거래 수락] [거절] 버튼에 필요 (2단계 "DM 버튼" 참고) |
 | `AUTH_STATE_SECRET` | 아무 긴 무작위 문자열 (예: 비밀번호 생성기로 40자) |
 | `CRON_SECRET` | (선택) 아무 무작위 문자열. 넣으면 keepalive를 Vercel 크론만 호출할 수 있음 |
 
@@ -129,7 +139,9 @@ Vercel 프로젝트 → **Settings → Environment Variables**:
 | 상황 | 알림 |
 |---|---|
 | 의뢰·대회·경매·공지 새 글 | 알림 채널 (웹후크) |
-| 의뢰 수락 / 대회 참가 / 경매 참여 신청 | 글쓴이에게 DM |
+| 의뢰 수락 / 대회 참가 / 경매 참여 신청 | 글쓴이에게 DM (포켓몬 의뢰는 [거래 수락] [거절] 버튼 포함) |
+| 의뢰자가 거래 수락 | 판매자에게 DM (의뢰자, 포켓몬, 보수) · 의뢰 자동 마감 · 기다리던 다른 판매자에게 마감 안내 DM |
+| 의뢰자가 거절 | 판매자에게 거절 DM · 의뢰 글 수락 목록에 '거절됨' 표시 |
 | 로켓단 거래 예약 | **두 사람 모두에게 DM** (포켓몬, 주는 사람, 받는 사람, 전할 말) |
 | 닉네임 저장 (인증 요청) | 알림 채널 |
 

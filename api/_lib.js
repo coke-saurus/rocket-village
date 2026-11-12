@@ -78,17 +78,21 @@ export async function discord(path, method = 'GET', body) {
   return text ? JSON.parse(text) : null;
 }
 
-// DM 보내기. 실패해도 예외 대신 false (서버 미가입, DM 차단 등)
-export async function sendDM(discordId, payload) {
-  if (!discordId) return false;
+// DM 보내고 보낸 메시지를 돌려줌. 실패하면 null (서버 미가입, DM 차단 등)
+export async function sendDMMessage(discordId, payload) {
+  if (!discordId) return null;
   try {
     const ch = await discord('/users/@me/channels', 'POST', { recipient_id: String(discordId) });
-    await discord(`/channels/${ch.id}/messages`, 'POST', payload);
-    return true;
+    return await discord(`/channels/${ch.id}/messages`, 'POST', payload);
   } catch (e) {
     console.error('DM 실패', discordId, e.message);
-    return false;
+    return null;
   }
+}
+
+// DM 보내기. 실패해도 예외 대신 false
+export async function sendDM(discordId, payload) {
+  return !!(await sendDMMessage(discordId, payload));
 }
 
 // 공지 채널(웹후크)로 보내기

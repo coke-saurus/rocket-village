@@ -133,6 +133,12 @@ details.ent[open] summary::before{content:"▾ "}
 .ent li{font-size:13px;background:var(--bg2);border-radius:6px;padding:6px 9px}
 .ent li b{font-weight:600}
 .ent li span{color:var(--muted)}
+.ent li.declined{opacity:.6}
+.ent .ent-sub{font-size:12px;color:var(--muted)}
+.ent .est{font-style:normal;font-size:11px;font-weight:600;padding:1px 6px;border-radius:999px;margin-left:4px;vertical-align:1px}
+.ent .est.ok{background:rgba(59,165,93,.18);color:#6fd394;border:1px solid rgba(59,165,93,.45)}
+.ent .est.no{background:rgba(255,255,255,.06);color:#a9a6b6;border:1px solid var(--line)}
+.ent .ent-act{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 
 /* ---------- hero ---------- */
 .hero{margin-top:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
@@ -429,7 +435,8 @@ const DEMO = !CONFIGURED || new URLSearchParams(location.search).has('demo');
 const BOARDS = {
   notice:  { name:'공지', code:'NOTICE', fields:[] },
   request: { name:'포켓몬 의뢰', code:'MISSION', desc:'필요한 포켓몬을 의뢰하고, 잡아줄 트레이너를 찾아요. 의뢰는 7일 뒤 자동 마감돼요.',
-             join:'의뢰 수락', entryLabel:'수락', msgPh:'예: 내일까지 잡아드릴게요. 저녁 8시에 접속합니다.',
+             join:'의뢰 수락', entryLabel:'수락', msgPh:'예: 개체값 31/31/31/31/x/31 (특방 제외 5V) 가지고 있어요. 주로 저녁 9시~새벽 1시에 접속해요.',
+             msgHint:'보유한 포켓몬의 개체값과 주요 접속 시간을 적어 주세요.',
              fields:[{k:'pokemon',label:'필요한 포켓몬'},{k:'reward',label:'보상'}] },
   pvp:     { name:'PVP 대회', code:'BATTLE', desc:'관리자가 연 대회에 참가 신청을 해요.', adminOnly:true,
              join:'참가 신청', entryLabel:'참가', msgPh:'예: 주말 저녁에만 가능합니다.',
@@ -863,7 +870,7 @@ function makeSupaApi(){
     },
     listPosts(boards, limit=60){
       return run(sb.from('posts')
-        .select(`*, ${AUTH}, entries(id,user_id,message,created_at,user:profiles(id,mc_name,discord_name,discord_avatar))`)
+        .select(`*, ${AUTH}, entries(*, user:profiles(id,mc_name,discord_name,discord_avatar))`)
         .in('board', [].concat(boards)).order('created_at', { ascending:false }).limit(limit));
     },
     createPost(d){ return run(sb.from('posts').insert(d).select().single()); },
@@ -873,6 +880,7 @@ function makeSupaApi(){
     deletePost(id){ return run(sb.from('posts').delete().eq('id', id)); },
     createEntry(post_id, message){ return run(sb.from('entries').insert({ post_id, message }).select().single()); },
     deleteEntry(id){ return run(sb.from('entries').delete().eq('id', id)); },
+    decideEntry(id, decision){ return call('/api/entry-decide', { id, decision }); },
     listListings(kind){
       return run(sb.from('rocket_listings')
         .select(`*, ${AUTH}, rocket_reservations(id,status,requester_id)`)
@@ -935,6 +943,8 @@ function makeDemoApi(){
       { id:1, post_id:4, user_id:'u2', message:'참가합니다!', created_at:t(10) },
       { id:2, post_id:4, user_id:'u3', message:'주말 저녁 가능', created_at:t(8) },
       { id:3, post_id:5, user_id:'u4', message:'시작가 이상 입찰 의사 있습니다.', created_at:t(3) },
+      { id:4, post_id:2, user_id:'u2', message:'개체값 31/31/31/31/x/31 (특방 제외 5V) 가지고 있어요. 주로 저녁 9시~새벽 1시에 접속해요.', status:'pending', created_at:t(2) },
+      { id:5, post_id:2, user_id:'u3', message:'4V 개체 있어요. 주말에만 접속해요.', status:'declined', created_at:t(4) },
     ],
     listings:[
       { id:1, kind:'have', pokemon:'메타몽', details:'Lv.30 · 교배용으로 빌려드려요', status:'open', author_id:'u3', created_at:t(9),
@@ -1002,6 +1012,17 @@ function makeDemoApi(){
     async deletePost(id){ D.posts = D.posts.filter(p => p.id !== id); D.entries = D.entries.filter(e => e.post_id !== id); },
     async createEntry(post_id, message){ if (D.entries.some(e => e.post_id === post_id && e.user_id === meId())) throw new Error('이미 처리된 요청이에요.'); const e = { id:++seq, post_id, user_id:meId(), message, created_at:nowIso() }; D.entries.push(e); return e; },
     async deleteEntry(id){ D.entries = D.entries.filter(e => e.id !== id); },
+    async decideEntry(id, decision){
+      await pause();
+      const e = byId(D.entries, id); const p = e && byId(D.posts, e.post_id);
+      if (!e || !p) throw new Error('이 수락을 찾을 수 없어요.');
+      if (p.author_id !== meId()) throw new Error('의뢰를 올린 사람만 수락하거나 거절할 수 있어요.');
+      if ((e.status || 'pending') !== 'pending') return { ok:true, already:true, status:e.status };
+      if (decision === 'accepted' && !(p.status === 'open' && (!p.closes_at || new Date(p.closes_at) > new Date()))) throw new Error('이미 마감된 의뢰예요.');
+      e.status = decision; e.decided_at = nowIso();
+      if (decision === 'accepted') p.status = 'closed';
+      return { ok:true, status:decision, dm:{ seller:true } };
+    },
     async listListings(kind){
       await pause();
       return D.listings.filter(l => l.kind === kind).sort(newest).map(l => ({
@@ -1397,11 +1418,28 @@ async function viewBoard(board){
   ${posts.length ? `<div class="grid">${posts.map(postCard).join('')}</div>` : '<div class="empty">아직 글이 없어요.</div>'}`;
 }
 
+// 수락 / 신청 한 줄: 상태 표시, 의뢰자에게는 거래 수락 · 거절 버튼
+function entryRow(p, e, { mine, open, admin }){
+  const st = e.status || 'pending';
+  const badge = p.board !== 'request' ? ''
+    : st === 'accepted' ? ' <em class="est ok">거래 수락</em>'
+    : st === 'declined' ? ' <em class="est no">거절됨</em>' : '';
+  const small = 'style="height:24px;padding:0 8px;font-size:12px"';
+  let btns = '';
+  if (p.board === 'request' && mine && st === 'pending' && e.user_id) {
+    if (open) btns += `<button class="btn sm red" data-act="ent-accept" data-id="${e.id}" ${small}>거래 수락</button>`;
+    btns += `<button class="btn sm ghost" data-act="ent-decline" data-id="${e.id}" ${small}>거절</button>`;
+  }
+  if (admin && e.user_id !== S.me.id) btns += `<button class="btn sm ghost" data-act="leave" data-id="${e.id}" ${small}>빼기</button>`;
+  return `<li class="${st}"><b>${esc(nameOf(e.user))}</b>${badge}${e.message ? ` <span>— ${esc(e.message)}</span>` : ''}${btns ? `<div class="ent-act">${btns}</div>` : ''}</li>`;
+}
+
 function postCard(p){
   const B = BOARDS[p.board], a = acc(), me = S.me;
   const mine = p.author_id === me.id;
   const entries = p.entries || [];
   const myEntry = entries.find(e => e.user_id === me.id);
+  const declined = entries.filter(e => e.status === 'declined').length;
   const cap = Number(String(p.meta?.capacity || '').replace(/[^0-9]/g, '')) || 0;
   const full = cap > 0 && entries.length >= cap;
   const open = isOpen(p);
@@ -1415,7 +1453,9 @@ function postCard(p){
 
   let join = '';
   if (open && !mine && p.author_id) {
-    if (myEntry) join = `<button class="btn sm" data-act="leave" data-id="${myEntry.id}">신청 취소</button>`;
+    if (myEntry) join = (myEntry.status || 'pending') === 'pending'
+      ? `<button class="btn sm" data-act="leave" data-id="${myEntry.id}">${p.board === 'request' ? '수락 취소' : '신청 취소'}</button>`
+      : `<button class="btn sm" disabled>${myEntry.status === 'declined' ? '거절됨' : '거래 수락됨'}</button>`;
     else if (!a.verified) join = `<button class="btn sm" disabled>연동 후 신청</button>`;
     else if (full) join = `<button class="btn sm" disabled>정원 마감</button>`;
     else join = `<button class="btn sm red" data-act="join" data-id="${p.id}">${B.join}</button>`;
@@ -1441,9 +1481,8 @@ function postCard(p){
     ${kvs ? `<div class="kvs">${kvs}</div>` : ''}
     ${p.body ? `<p class="body">${esc(p.body)}</p>` : ''}
     <div class="by">${avatar(p.author)}<strong>${esc(nameOf(p.author))}</strong><span class="mono">· ${ago(p.created_at)}</span></div>
-    ${entries.length ? `<details class="ent"><summary>${B.entryLabel} ${entries.length}명</summary><ul>
-      ${entries.map(e => `<li><b>${esc(nameOf(e.user))}</b>${e.message ? ` <span>— ${esc(e.message)}</span>` : ''}
-        ${a.admin && e.user_id !== me.id ? ` <button class="btn sm ghost" data-act="leave" data-id="${e.id}" style="height:22px;padding:0 6px;font-size:11px">빼기</button>` : ''}</li>`).join('')}
+    ${entries.length ? `<details class="ent"${mine && open && entries.some(e => (e.status || 'pending') === 'pending') ? ' open' : ''}><summary>${B.entryLabel} ${entries.length}명${declined ? ` <span class="ent-sub">(거절 ${declined})</span>` : ''}</summary><ul>
+      ${entries.map(e => entryRow(p, e, { mine, open, admin:a.admin })).join('')}
     </ul></details>` : ''}
     ${(join || manage || del) ? `<div class="actions">${join}${manage}${del}</div>` : ''}
   </article>`;
@@ -1669,7 +1708,7 @@ async function writeRequest(){
     sub: a.admin ? '관리자 의뢰는 자동 마감과 개수 제한이 없어요.' : '올리면 7일 뒤 자동으로 마감돼요. 모집 중인 의뢰는 한 사람당 하나만 올릴 수 있어요.',
     wide: true,
     html: pkEditorHtml(true, true) + reward + (a.admin ? deadlineField(true) : '<p class="hint lock">🔒 올린 뒤 일주일이 지나면 자동으로 마감돼요.</p>')
-      + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="예: 주로 저녁 8~11시 접속 · 레벨 무관 · 마을 창고 앞에서 거래"></textarea></div>`,
+      + `<div class="field"><label>추가 내용 (선택)</label><textarea class="input" name="body" maxlength="2000" placeholder="예: 주로 저녁 8~11시 접속 · 가격 네고 가능 · 이로치면 200,000 골드 추가로 드려요"></textarea></div>`,
     submit: '의뢰 올리기',
     onOpen(){
       bindPkEditor(true);
@@ -1790,7 +1829,7 @@ const ACTIONS = {
     openForm({
       title: B.join,
       sub: `<b>${esc(card?.querySelector('h3')?.textContent || '')}</b> 글쓴이에게 디스코드 DM으로 알려드려요.${DM_HINT}`,
-      html: `<div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" placeholder="${esc(B.msgPh)}"></textarea></div>`,
+      html: `<div class="field"><label>전할 말</label><textarea class="input" name="message" maxlength="300" placeholder="${esc(B.msgPh)}"></textarea>${B.msgHint ? `<span class="hint">${esc(B.msgHint)}</span>` : ''}</div>`,
       submit: B.join,
       async onSubmit(f){
         const e = await S.api.createEntry(id, (f.message || '').trim());
@@ -1799,6 +1838,20 @@ const ACTIONS = {
         renderView();
       },
     });
+  },
+  async 'ent-accept'(d){
+    if (!await ask('거래 수락', '이 판매자와 거래를 수락할까요? 의뢰가 마감되고, 판매자에게 디스코드 DM으로 알려요. 기다리던 다른 판매자에게는 마감 안내가 가요.', '거래 수락')) return;
+    const r = await S.api.decideEntry(Number(d.id), 'accepted');
+    if (r.already) toast('이미 처리된 수락이에요.');
+    else toast(r.dm?.seller === false ? '거래를 수락하고 의뢰를 마감했어요. 다만 판매자에게 DM을 보내지 못했어요. (판매자가 디스코드 서버에 없거나 DM을 막아 둠)' : '거래를 수락했어요. 판매자에게 DM으로 알렸고, 의뢰는 마감됐어요.', r.dm?.seller === false ? 'warn' : '');
+    renderView();
+  },
+  async 'ent-decline'(d){
+    if (!await ask('수락 거절', '이 판매자의 수락을 거절할까요? 판매자에게 거절 DM이 가고, 목록에 \'거절됨\'으로 표시돼요.', '거절', true)) return;
+    const r = await S.api.decideEntry(Number(d.id), 'declined');
+    if (r.already) toast('이미 처리된 수락이에요.');
+    else toast(r.dm?.seller === false ? '거절했어요. 다만 판매자에게 DM을 보내지 못했어요.' : '거절했어요. 판매자에게 DM으로 알렸어요.', r.dm?.seller === false ? 'warn' : '');
+    renderView();
   },
   async leave(d){
     if (!await ask('신청 취소', '이 신청을 취소할까요?', '취소하기', true)) return;

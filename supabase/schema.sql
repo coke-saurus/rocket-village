@@ -263,6 +263,20 @@ alter table public.rocket_reservations add constraint rocket_reservations_reques
 alter table public.posts           add column if not exists closes_at timestamptz;
 alter table public.rocket_listings add column if not exists meta jsonb not null default '{}'::jsonb;
 
+-- 포켓몬 의뢰: 의뢰자의 거래 수락 / 거절 (상태는 서버만 바꿈)
+alter table public.entries add column if not exists status        text not null default 'pending';
+alter table public.entries add column if not exists decided_at    timestamptz;
+alter table public.entries add column if not exists dm_channel_id text;
+alter table public.entries add column if not exists dm_message_id text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint
+                 where conname = 'entries_status_check' and conrelid = 'public.entries'::regclass) then
+    alter table public.entries add constraint entries_status_check
+      check (status in ('pending', 'accepted', 'declined'));
+  end if;
+end $$;
+
 -- ---------------------------------------------------------------------
 -- 7. 테이블 권한 (컬럼 단위로 필요한 것만 허용)
 -- ---------------------------------------------------------------------
@@ -357,7 +371,8 @@ create policy entries_insert on public.entries
 
 drop policy if exists entries_delete on public.entries;
 create policy entries_delete on public.entries
-  for delete to authenticated using (user_id = auth.uid() or public.is_admin());
+  for delete to authenticated
+  using ((user_id = auth.uid() and status = 'pending') or public.is_admin());
 
 -- 로켓단 게시글
 drop policy if exists rocket_listings_read on public.rocket_listings;

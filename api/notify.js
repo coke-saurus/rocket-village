@@ -1,9 +1,11 @@
 // POST /api/notify  { type, id }
 // 사이트에서 글·신청·예약을 만든 직후 호출 → 디스코드로 알림
 import {
-  db, getUser, getAccess, claimNotify, sendDM, postChannel, discord,
+  db, getUser, getAccess, claimNotify, sendDM, sendDMMessage, postChannel, discord,
   who, clip, siteUrl, httpError, RED, GOLD, env,
 } from './_lib.js';
+import { pkFields, rewardText, ts } from './_fmt.js';
+import { entryButtons, saveDmRef, requesterHead, buttonsEnabled } from './_entry.js';
 
 const BOARD = {
   notice: '📢 공지',
@@ -11,36 +13,6 @@ const BOARD = {
   pvp: '⚔️ PVP 대회',
   auction: '💰 경매 모집',
 };
-const STATS = [['hp', '체력'], ['atk', '공격'], ['def', '방어'], ['spa', '특공'], ['spd', '특방'], ['spe', '스피드']];
-const won = (n) => Number(n || 0).toLocaleString('ko-KR');
-
-// 포켓몬 정보 → 디스코드 필드
-function pkFields(pk) {
-  if (!pk) return [];
-  const iv = STATS.map(([k, n]) => {
-    const v = pk.ivs?.[k];
-    const mark = pk.nature?.up === k ? '▲' : pk.nature?.dn === k ? '▼' : '';
-    return `${n}${mark} ${v == null ? '－' : v}`;
-  }).join(' · ');
-  return [
-    { name: '포켓몬', value: clip(`${pk.shiny ? '✨ 이로치 ' : ''}${pk.name}`, 200), inline: true },
-    { name: '특성', value: pk.ability ? `${pk.ability.n}${pk.ability.hidden ? ' (숨겨진 특성)' : ''}` : '상관없음', inline: true },
-    { name: '성격', value: pk.nature?.n || '상관없음', inline: true },
-    { name: '개체값', value: clip(iv, 1000) },
-    ...(pk.level !== undefined ? [{ name: '최대 레벨', value: pk.level ? `Lv.${pk.level}` : '상관없음', inline: true }] : []),
-  ];
-}
-function rewardText(r, pk) {
-  if (!r) return null;
-  const lines = [`${won(r.gold)} 골드`];
-  const iv = [r.strict ? '타협 불가' : r.less ? `${won(r.less)} 골드/-1` : '', r.more ? `${won(r.more)} 골드/+1` : ''].filter(Boolean);
-  if (iv.length) lines.push(`요구 개체값: ${iv.join(' · ')}`);
-  if (pk?.level && (r.lvStrict || r.lvLess)) lines.push(`레벨(최대 Lv.${pk.level}): ${r.lvStrict ? '타협 불가' : `${won(r.lvLess)} 골드/-1`}`);
-  if (r.other) lines.push(`+ ${r.other}`);
-  return lines.join('\n');
-}
-const ts = (iso) => `<t:${Math.floor(new Date(iso).getTime() / 1000)}:f> (<t:${Math.floor(new Date(iso).getTime() / 1000)}:R>)`;
-
 const META_LABEL = {
   pokemon: '필요한 포켓몬', reward: '보상',
   when: '일시', rules: '규칙', capacity: '정원',
@@ -112,20 +84,25 @@ async function onEntry(user, id) {
   if (!(await claimNotify('entries', id))) return { skipped: true };
 
   const [author] = await db(`profiles?id=eq.${en.post.author_id}&select=mc_name,discord_name,discord_id`);
-  const author_dm = await sendDM(author?.discord_id, {
-    content: `📮 **${clip(en.post.title, 80)}** 글에 새 신청이 들어왔어요.`,
+  const isRequest = en.post.board === 'request';
+  const msg = await sendDMMessage(author?.discord_id, {
+    content: isRequest
+      ? `${requesterHead(en.post.title)}${buttonsEnabled() ? '\n아래 버튼으로 거래를 수락하거나 거절할 수 있어요. 거래를 수락하면 의뢰가 마감돼요.' : '\n사이트의 의뢰 글에서 거래를 수락하거나 거절할 수 있어요.'}`
+      : `📮 **${clip(en.post.title, 80)}** 글에 새 신청이 들어왔어요.`,
     embeds: [{
-      title: `${BOARD[en.post.board] || ''} 신청 알림`,
+      title: isRequest ? '🎯 포켓몬 의뢰 · 판매자 수락' : `${BOARD[en.post.board] || ''} 신청 알림`,
       color: RED,
       url: siteUrl() ? `${siteUrl()}/#${en.post.board}` : undefined,
       fields: [
-        { name: '신청자', value: who(en.user), inline: true },
+        { name: isRequest ? '판매자' : '신청자', value: who(en.user), inline: true },
         { name: '전할 말', value: clip(en.message || '(없음)', 1000) },
       ],
       timestamp: en.created_at,
     }],
+    ...(isRequest ? { components: entryButtons(en.id) } : {}),
   });
-  return { dm: { author: author_dm } };
+  if (isRequest && msg) await saveDmRef(en.id, msg);
+  return { dm: { author: !!msg } };
 }
 
 // 로켓단 거래 예약 → 두 사람 모두에게 DM
